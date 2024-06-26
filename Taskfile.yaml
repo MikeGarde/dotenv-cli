@@ -1,0 +1,43 @@
+version: '3'
+
+tasks:
+  default:
+    desc: Show the available tasks
+    cmds:
+      - task --list --sort alphanumeric
+
+  tests:
+    desc: Run tests
+    deps:
+      - build
+    cmds:
+      - npm run tests
+
+  eslint:
+    desc: Lint JavaScript files
+    cmds:
+      - npm run eslint:check
+
+  build:
+    desc: Compile TypeScript to JavaScript
+    cmds:
+      - npx tsc
+    sources:
+      - src/**/*.ts
+    generates:
+      - build/**/*.js
+  build:watch:
+    desc: Compile TypeScript to JavaScript and watch for changes
+    cmds:
+      - npx tsc -w
+    sources:
+      - src/**/*.ts
+    generates:
+      - build/**/*.js
+
+  dev-install:
+    desc: Local development setup
+    cmds:
+      - npm install
+      - task build
+      - sudo npm install -g
