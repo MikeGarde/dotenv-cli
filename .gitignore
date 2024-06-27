@@ -1,0 +1,6 @@
+.idea
+.task
+.vscode
+node_modules
+
+dotenv-*.tgz

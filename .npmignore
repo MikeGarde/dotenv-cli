@@ -1,0 +1,6 @@
+.idea
+.task
+.vscode
+exec
+
+dotenv-*.tgz
