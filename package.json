@@ -1,5 +1,5 @@
 {
-  "name": "dotenv-cli",
+  "name": "@mikegarde/dotenv-cli",
   "version": "0.0.1",
   "description": "Read and update dotenv files from the cli",
   "main": "build/app.js",

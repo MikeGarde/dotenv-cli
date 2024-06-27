@@ -41,3 +41,47 @@ tasks:
       - npm install
       - task build
       - sudo npm install -g
+
+  publish:
+    desc: Create a new release, task release -- [patch|minor|major]
+    silent: true
+    vars:
+      STEP: '{{default "patch" .CLI_ARGS}}'
+    cmds:
+      - |
+        STEP="{{.STEP}}"
+
+        # Only allowed on main branch
+        if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ]; then
+          echo "Not on main branch"
+          exit 1
+        fi
+        
+        task tests
+
+        VERSION=$(gh release list | sort -r | head -n1 | awk '{print $1}')
+        MAJOR=$(echo $VERSION | cut -d. -f1 | cut -c2-)
+        MINOR=$(echo $VERSION | cut -d. -f2)
+        PATCH=$(echo $VERSION | cut -d. -f3)
+
+        echo "Current version: $VERSION"
+        if [ "$STEP" = "major" ]; then
+          MAJOR=$((MAJOR+1))
+          MINOR=0
+          PATCH=0
+        elif [ "$STEP" = "minor" ]; then
+          MINOR=$((MINOR+1))
+          PATCH=0
+        elif [ "$STEP" = "patch" ]; then
+          PATCH=$((PATCH+1))
+        else
+          echo "Invalid step: $STEP"
+          exit 1
+        fi
+        VERSION="$MAJOR.$MINOR.$PATCH"
+        echo "New version: $VERSION"
+
+        npm version $VERSION
+        git push
+        gh release create "$VERSION" --generate-notes --target main
+        npm publish --access public
