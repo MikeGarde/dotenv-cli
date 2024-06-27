@@ -1,6 +1,6 @@
 {
   "name": "dotenv-cli",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Read and update dotenv files from the cli",
   "main": "build/app.js",
   "types": "build/app.d.ts",
