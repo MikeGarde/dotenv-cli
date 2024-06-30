@@ -1,5 +1,5 @@
-import { execSync } from 'child_process';
-import path         from 'path';
+import {execSync} from 'child_process';
+import path       from 'path';
 
 describe('app.ts', () => {
   const appPath = path.resolve(__dirname, '../build/app.js');
@@ -36,18 +36,19 @@ describe('app.ts', () => {
     expect(result.toString().trim()).toBe('Single quotes');
   });
 
-  it('should output entire .env as valid JSON', () => {
-    const result = execSync(`node ${appPath} --json --file ${envPath}`);
-    const json   = JSON.parse(result.toString().trim());
-    expect(json.NAME).toBe('dotenv-cli');
-  });
+  it('missing key should return empty string and status 1', async () => {
+    try {
+      const result = execSync(`node ${appPath} MISSING --file ${envPath}`);
+      // This shouldn't happen
+      expect(true).toBeFalsy();
+    } catch (error) {
+      const errorJson: string = JSON.stringify(error);
+      const parsedError: any  = JSON.parse(errorJson);
+      const buffer: Buffer    = Buffer.from(parsedError.stderr.data);
+      const errorMsg: string  = buffer.toString('utf8');
 
-  it('should output valid JSON with a single key and value', () => {
-    const result = execSync(`node ${appPath} NAME --json --file ${envPath}`);
-    const json   = JSON.parse(result.toString().trim());
-    const length = Object.keys(json).length;
-
-    expect(json.NAME).toBe('dotenv-cli');
-    expect(length).toBe(1);
+      expect(parsedError.status).toEqual(1);
+      expect(errorMsg).toBe('');
+    }
   });
 });

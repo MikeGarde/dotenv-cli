@@ -1,13 +1,14 @@
-import fs from 'node:fs';
-import log from './log.js';
+import fs            from 'node:fs';
+import log           from './log.js';
+import ruleViolation from './ruleViolationError.js';
 
 interface EnvObject {
   [key: string]: string;
 }
 
 function parseEnvFile(filePath: string): EnvObject {
-  const envContent = fs.readFileSync(filePath, 'utf8');
-  const envLines = envContent.split('\n');
+  const envContent: string = fs.readFileSync(filePath, 'utf8');
+  const envLines: string[] = envContent.split('\n');
 
   const envObject: EnvObject = {};
 
@@ -20,7 +21,7 @@ function parseEnvFile(filePath: string): EnvObject {
       log.debug('Ignoring comment');
     } else {
       const [key, ...valueParts] = trimmedLine.split('=');
-      const value = valueParts.join('=').trim();
+      const value: string        = valueParts.join('=').trim();
 
       if (key === trimmedLine) {
         log.debug(`Ignoring line without key=value: ${envLines[i]}`);
@@ -49,6 +50,10 @@ function parseEnvFile(filePath: string): EnvObject {
         envObject[key] = multilineValue.slice(0, -1);
       } else {
         log.debug(`key: ${key}, un-quoted, single line`)
+        if (value.includes('"') || value.includes("'")) {
+          // TODO: should we allow values that include closing quotes and escape them?
+          throw new ruleViolation(`Invalid value on line ${i + 1}: ${envLines[i]}`);
+        }
         envObject[key] = value;
       }
     }
@@ -59,4 +64,4 @@ function parseEnvFile(filePath: string): EnvObject {
 
 export default parseEnvFile;
 
-export { EnvObject };
+export {EnvObject};

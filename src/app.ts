@@ -20,7 +20,7 @@ async function app() {
     .version(packageJson.version, '-v, --version', 'Output the version number')
     .helpOption('-h, --help', 'Show the help')
     .description('Read and update environment variables from a .env file')
-    .argument('[key]', 'Environment variable key')
+    .argument('[key...]', 'Environment variable key')
     .option('-f, --file <filename>', 'Specify the .env file (default: .env)')
     .option('-j, --json', 'Output as JSON')
     .option('-s, --set <value>', 'Update the environment variable in the .env file')
@@ -35,10 +35,20 @@ async function app() {
 
   const envFilePath: string = options.file || '.env';
   const fullEnvPath: string = path.resolve(envFilePath);
-  const key: string         = program.args[0];
+  const keys: string[]      = program.args;
   const set: string         = options.set;
-  const json: boolean       = (options.json !== undefined);
-  const multiline: boolean  = (options.multiline !== undefined);
+
+  // Multiple keys or no keys assume --json
+  if (keys.length > 1 || !keys.length) {
+    log.debug('Key count (0 or >1) defaulting to JSON');
+    options.json = true;
+  }
+  log.debug('Keys:', keys);
+  log.debug('Options:', options);
+  log.debug('File:', fullEnvPath);
+
+  const json: boolean      = (options.json !== undefined);
+  const multiline: boolean = (options.multiline !== undefined);
 
   // Qualifying Rules
   // - must have a .env file
@@ -49,13 +59,9 @@ async function app() {
   if (json && set) {
     throw new RuleViolation('Cannot use --json and --set together');
   }
-  // - must have a key if not using --json
-  if (!json && !key) {
-    throw new RuleViolation('Must specify a key');
-  }
   // - must have a key if using --set
-  if (set && !key) {
-    throw new RuleViolation('Must specify a key when using --set');
+  if (set && (!keys.length || keys.length > 1)) {
+    throw new RuleViolation('Must specify a single key when using --set');
   }
   // - cannot have both --json and --multiline
   if (json && multiline) {
@@ -64,14 +70,14 @@ async function app() {
 
   let envObject = parseEnvFile(envFilePath);
 
-  if (json && !key) {
+  if (json && !keys.length) {
     log.debug('Outputting entire .env file as JSON');
     log.info(JSON.stringify(envObject));
   } else if (set) {
-    const value: string = set;
-    const line: string  = `${key}=${value}`;
+    const key: string  = keys[0];
+    const line: string = `${key}=${set}`;
 
-    log.debug(`Updating "${line}" in "${envFilePath}"`);
+    log.debug(`Updating "${key}"`);
 
     // Do we want to update or append the .env file?
     if (envObject[key]) {
@@ -86,19 +92,26 @@ async function app() {
       fs.writeFileSync(envFilePath, `${line}\n`, {flag: 'a'});
     }
   } else {
-    log.debug(`Reading "${key}" from "${envFilePath}"`);
+    let result: string = '';
 
-    const value = formatValue(envObject[key], multiline);
-    if (value) {
-      if (json) {
-        log.info(`{"${key}": "${value}"}`);
-      } else {
-        log.info(value);
+    for (const key of keys) {
+      log.debug(`Getting "${key}"`);
+
+      let value = formatValue(envObject[key], multiline);
+      if (!value) {
+        log.debug(`Environment variable "${key}" not found`);
+        process.exitCode = 1;
       }
-    } else {
-      log.debug(`Environment variable "${key}" not found in "${envFilePath}"`);
-      process.exitCode = 1;
+      value = json ? (value ? `"${value}"` : 'null') : value;
+      result += json ? `"${key}": ${value},` : `${value}\n`;
     }
+
+    // Removes trailing newline or comma
+    result = result.slice(0, -1);
+    if (json) {
+      result = `{${result}}`;
+    }
+    log.info(result);
   }
 }
 
