@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
-import { program }   from 'commander';
+import {program}     from 'commander';
+import formatValue   from './formatValue.js';
 import fs            from 'node:fs';
 import path          from 'node:path';
 import parseEnvFile  from './envParser.js';
 import RuleViolation from './ruleViolationError.js';
 
-import log, { setLogDebug } from './log.js';
+import log, {setLogDebug} from './log.js';
 
 async function app() {
   // Parse command line options
@@ -18,6 +19,7 @@ async function app() {
     .option('-f, --file <filename>', 'Specify the .env file (default: .env)')
     .option('-j, --json', 'Output as JSON')
     .option('-s, --set <value>', 'Update the environment variable in the .env file')
+    .option('-m, --multiline', 'Allow multiline values')
     .option('-d, --debug', 'Output extra debugging')
     .showSuggestionAfterError(true)
     .parse(process.argv);
@@ -30,7 +32,8 @@ async function app() {
   const fullEnvPath: string = path.resolve(envFilePath);
   const key: string         = program.args[0];
   const set: string         = options.set;
-  const json: boolean       = options.json;
+  const json: boolean       = (options.json !== undefined);
+  const multiline: boolean  = (options.multiline !== undefined);
 
   // Qualifying Rules
   // - must have a .env file
@@ -48,6 +51,10 @@ async function app() {
   // - must have a key if using --set
   if (set && !key) {
     throw new RuleViolation('Must specify a key when using --set');
+  }
+  // - cannot have both --json and --multiline
+  if (json && multiline) {
+    throw new RuleViolation('Cannot use --json and --multiline together');
   }
 
   let envObject = parseEnvFile(envFilePath);
@@ -71,15 +78,15 @@ async function app() {
     } else {
       log.debug(`Appending "${key}" to "${envFilePath}"`);
 
-      fs.writeFileSync(envFilePath, `${line}\n`, { flag: 'a' });
+      fs.writeFileSync(envFilePath, `${line}\n`, {flag: 'a'});
     }
   } else {
     log.debug(`Reading "${key}" from "${envFilePath}"`);
 
-    const value = envObject[key];
+    const value = formatValue(envObject[key], multiline);
     if (value) {
       if (json) {
-        log.info(JSON.stringify({ [key]: value }));
+        log.info(`{"${key}": "${value}"}`);
       } else {
         log.info(value);
       }
