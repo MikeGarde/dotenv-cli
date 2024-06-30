@@ -59,7 +59,7 @@ tasks:
         
         task tests
 
-        VERSION=$(gh release list | sort -r | head -n1 | awk '{print $3}')
+        VERSION=$(gh release list --json tagName | jq -r '.[] | .tagName' | sort -V | tail -n 1)
         MAJOR=$(echo $VERSION | cut -d. -f1)
         MINOR=$(echo $VERSION | cut -d. -f2)
         PATCH=$(echo $VERSION | cut -d. -f3)
