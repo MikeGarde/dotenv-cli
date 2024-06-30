@@ -11,10 +11,9 @@ import * as url      from 'node:url';
 import log, {setLogDebug} from './log.js';
 
 async function app() {
-  // Get package.json
-  const currentDirectory: string = path.dirname(url.fileURLToPath(import.meta.url));
-  const packagePath: string      = path.join(currentDirectory, '../package.json');
-  const packageJson              = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+  const installDir: string  = path.dirname(url.fileURLToPath(import.meta.url));
+  const packagePath: string = path.join(installDir, '../package.json');
+  const packageJson         = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 
   // Parse command line options
   program
