@@ -10,9 +10,12 @@ import RuleViolation from './ruleViolationError.js';
 import log, {setLogDebug} from './log.js';
 
 async function app() {
+  // Get package.json
+  const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+
   // Parse command line options
   program
-    .version('0.0.0', '-v, --version', 'Output the version number')
+    .version(packageJson.version, '-v, --version', 'Output the version number')
     .helpOption('-h, --help', 'Show the help')
     .description('Read and update environment variables from a .env file')
     .argument('[key]', 'Environment variable key')
