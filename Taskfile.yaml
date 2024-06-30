@@ -43,7 +43,7 @@ tasks:
       - sudo npm install -g
 
   publish:
-    desc: Create a new release, task release -- [patch|minor|major]
+    desc: Create a new release, task publish -- [patch|minor|major]
     silent: true
     vars:
       STEP: '{{default "patch" .CLI_ARGS}}'
@@ -59,8 +59,8 @@ tasks:
         
         task tests
 
-        VERSION=$(gh release list | sort -r | head -n1 | awk '{print $1}')
-        MAJOR=$(echo $VERSION | cut -d. -f1 | cut -c2-)
+        VERSION=$(gh release list | sort -r | head -n1 | awk '{print $3}')
+        MAJOR=$(echo $VERSION | cut -d. -f1)
         MINOR=$(echo $VERSION | cut -d. -f2)
         PATCH=$(echo $VERSION | cut -d. -f3)
 
