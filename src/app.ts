@@ -6,12 +6,15 @@ import fs            from 'node:fs';
 import path          from 'node:path';
 import parseEnvFile  from './envParser.js';
 import RuleViolation from './ruleViolationError.js';
+import * as url      from 'node:url';
 
 import log, {setLogDebug} from './log.js';
 
 async function app() {
   // Get package.json
-  const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+  const currentDirectory: string = path.dirname(url.fileURLToPath(import.meta.url));
+  const packagePath: string      = path.join(currentDirectory, '../package.json');
+  const packageJson              = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 
   // Parse command line options
   program
