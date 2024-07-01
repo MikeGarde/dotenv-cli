@@ -10,7 +10,7 @@ function escapeAndQuote(str: string, quote: boolean): string {
     str = str.slice(1, -1);
   }
 
-  let needsQuotes = quote || /\s|"/.test(str);
+  const needsQuotes: boolean = quote || /\s|"/.test(str);
 
   // Only escape double quotes if necessary
   if (needsQuotes && /(?<!\\)"/.test(str)) {
