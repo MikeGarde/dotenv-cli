@@ -10,6 +10,7 @@ import * as url      from 'node:url';
 
 import log, {setLogDebug} from './log.js';
 import escapeAndQuote     from "./escapeAndQuote.js";
+import readPipe           from "./readPipe.js";
 
 async function app() {
   const installDir: string  = path.dirname(url.fileURLToPath(import.meta.url));
@@ -25,7 +26,7 @@ async function app() {
     .option('-f, --file <filename>', 'Specify the .env file (default: .env)')
     .option('-j, --json', 'Output as JSON')
     .option('-m, --multiline', 'Allow multiline values')
-    .option('-s, --set <value>', 'Update the environment variable in the .env file')
+    .option('-s, --set [value]', 'Update the environment variable in the .env file')
     .option('-q, --quote', 'Quote the value when --set regardless of need')
     .option('-d, --debug', 'Output extra debugging')
     .showSuggestionAfterError(true)
@@ -35,16 +36,37 @@ async function app() {
 
   setLogDebug(options.debug);
 
-  const envFilePath: string = options.file || '.env';
-  const fullEnvPath: string = path.resolve(envFilePath);
-  const keys: string[]      = program.args;
-  const set: string         = options.set;
+  const stdin: string | void = await readPipe().catch((err) => {
+    throw new RuleViolation(`Error reading from stdin: ${err}`);
+  });
+
+  const envFilePath: string   = options.file || '.env';
+  const fullEnvPath: string   = path.resolve(envFilePath);
+  const keys: string[]        = program.args;
+  const set: string | boolean = options.set;
 
   // Multiple keys or no keys assume --json
   if (keys.length > 1 || !keys.length) {
     log.debug('Key count (0 or >1) defaulting to JSON');
     options.json = true;
   }
+
+  // Determine if we are setting a value, and if so, what's the value
+  let setValue: string = '';
+  if (!stdin && typeof set === 'boolean') {
+    // --set && stdin without a value
+    throw new RuleViolation('Must specify a value when using --set');
+  } else if (stdin && typeof set === 'string') {
+    // - cannot have both --set [value] and stdin
+    throw new RuleViolation('Cannot use --set and stdin together');
+  } else if (stdin && set) {
+    // stdin will replace --set [value] but --set will trigger the action
+    setValue = stdin;
+  } else if (typeof set === 'string') {
+    // --set [value] will be used
+    setValue = set;
+  }
+
   log.debug('Keys:', keys);
   log.debug('Options:', options);
   log.debug('File:', fullEnvPath);

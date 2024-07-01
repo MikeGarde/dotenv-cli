@@ -63,3 +63,28 @@ Quotes will be added if needed, but you can also force them:
 ```shell
 dotenv <key> --set <value> --quote
 ```
+
+Or pipe a value in:
+
+```shell
+echo <value> | dotenv <key> --set
+```
+
+```shell
+openssl genpkey -algorithm RSA -outform PEM -pkeyopt rsa_keygen_bits:2048 2>/dev/null | dotenv RSA_KEY --set
+dotenv RSA_KEY --multiline | openssl rsa -pubout 2>/dev/null | dotenv RSA_PUB --set
+```
+
+## Within Node
+
+You can also use dotenv-cli within a Node script to easily retrieve values from a .env file:
+
+```shell
+npm i @mikegarde/dotenv-cli
+```
+
+```typescript
+import { getEnv } from '@mikegarde/dotenv-cli';
+
+const value = getEnv('KEY');
+```
