@@ -20,12 +20,6 @@ Get a value from a .env.example file:
 
 ```shell
 dotenv <key> --file .env.example
-``` 
-
-Set a value in a .env file:
-
-```shell
-dotenv <key> --set <value>
 ```
 
 Return a .env file as JSON:
@@ -54,4 +48,18 @@ KUpRKfFLfRYC9AIKjbJTWit+CqvjWYzvQwECAwEAAQJAIJLixBy2qpFoS4DSmoEm
 
 $ dotenv RSA_KEY
 -----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKj34GkxFhD90vcNLYLInFE...
+```
+
+## Setting a Value
+
+Set a value in a .env file:
+
+```shell
+dotenv <key> --set <value>
+```
+
+Quotes will be added if needed, but you can also force them:
+
+```shell
+dotenv <key> --set <value> --quote
 ```

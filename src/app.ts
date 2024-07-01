@@ -9,6 +9,7 @@ import RuleViolation from './ruleViolationError.js';
 import * as url      from 'node:url';
 
 import log, {setLogDebug} from './log.js';
+import escapeAndQuote     from "./escapeAndQuote.js";
 
 async function app() {
   const installDir: string  = path.dirname(url.fileURLToPath(import.meta.url));
@@ -23,8 +24,9 @@ async function app() {
     .argument('[key...]', 'Environment variable key')
     .option('-f, --file <filename>', 'Specify the .env file (default: .env)')
     .option('-j, --json', 'Output as JSON')
-    .option('-s, --set <value>', 'Update the environment variable in the .env file')
     .option('-m, --multiline', 'Allow multiline values')
+    .option('-s, --set <value>', 'Update the environment variable in the .env file')
+    .option('-q, --quote', 'Quote the value when --set regardless of need')
     .option('-d, --debug', 'Output extra debugging')
     .showSuggestionAfterError(true)
     .parse(process.argv);
@@ -49,6 +51,7 @@ async function app() {
 
   const json: boolean      = (options.json !== undefined);
   const multiline: boolean = (options.multiline !== undefined);
+  const quoteSet: boolean  = (options.quote !== undefined);
 
   // Qualifying Rules
   // - must have a .env file
@@ -74,8 +77,9 @@ async function app() {
     log.debug('Outputting entire .env file as JSON');
     log.info(JSON.stringify(envObject));
   } else if (set) {
-    const key: string  = keys[0];
-    const line: string = `${key}=${set}`;
+    const key: string      = keys[0];
+    const newValue: string = escapeAndQuote(set, quoteSet);
+    const line: string     = `${key}=${newValue}`;
 
     log.debug(`Updating "${key}"`);
 
