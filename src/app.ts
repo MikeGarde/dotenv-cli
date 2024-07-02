@@ -75,25 +75,36 @@ async function app() {
 
   if (json && !keys.length) {
     log.debug('Outputting entire .env file as JSON');
-    log.info(JSON.stringify(envObject));
+    log.info(envObject.toJsonString());
   } else if (set) {
     const key: string      = keys[0];
-    const newValue: string = escapeAndQuote(set, quoteSet);
-    const line: string     = `${key}=${newValue}`;
+    const newValue: string = escapeAndQuote(setValue, quoteSet);
+    const newLines: string = `${key}=${newValue}`;
 
     log.debug(`Updating "${key}"`);
 
     // Do we want to update or append the .env file?
     if (envObject[key]) {
-      log.debug(`Replacing "${key}" in "${envFilePath}"`);
+      log.debug('Updating existing key', envObject[key]);
+      const lineStart = envObject[key].lineStart;
+      const lineEnd   = envObject[key].lineEnd;
+      log.debug(`Replacing lines ${lineStart}-${lineEnd}`);
 
-      const regex: RegExp = new RegExp(`${key}=.+`);
-      const data: string  = fs.readFileSync(envFilePath, 'utf8').replace(regex, line);
-      fs.writeFileSync(envFilePath, data);
+      // Split the new lines into an array
+      let newLinesArray: string[] = newLines.split('\n');
+
+      // Read the file and split it into an array of lines
+      let lines: string[] = fs.readFileSync(envFilePath, 'utf8').split('\n');
+
+      // Replace the lines between lineStart and lineEnd
+      lines.splice(lineStart, lineEnd - lineStart + 1, ...newLinesArray);
+
+      // Join the lines back together and write the result back to the file
+      fs.writeFileSync(envFilePath, lines.join('\n'));
     } else {
       log.debug(`Appending "${key}" to "${envFilePath}"`);
 
-      fs.writeFileSync(envFilePath, `${line}\n`, {flag: 'a'});
+      fs.writeFileSync(envFilePath, `${newLines}\n`, {flag: 'a'});
     }
   } else {
     let result: string = '';
@@ -101,11 +112,15 @@ async function app() {
     for (const key of keys) {
       log.debug(`Getting "${key}"`);
 
-      let value = formatValue(envObject[key], multiline);
-      if (!value) {
+      let value = '';
+
+      if (!envObject[key]) {
         log.debug(`Environment variable "${key}" not found`);
         process.exitCode = 1;
+      } else {
+        value = formatValue(envObject[key].value, multiline);
       }
+
       value = json ? (value ? `"${value}"` : 'null') : value;
       result += json ? `"${key}": ${value},` : `${value}\n`;
     }

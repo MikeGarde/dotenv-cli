@@ -1,60 +1,85 @@
 import fs            from 'node:fs';
 import log           from './log.js';
+import EnvObject     from "./envObject.js";
 import ruleViolation from './ruleViolationError.js';
 
-interface EnvObject {
-  [key: string]: string;
-}
-
+/**
+ * Parse the .env file into an object
+ *
+ * @param filePath
+ */
 function parseEnvFile(filePath: string): EnvObject {
   const envContent: string = fs.readFileSync(filePath, 'utf8');
   const envLines: string[] = envContent.split('\n');
 
-  const envObject: EnvObject = {};
+  const envObject: EnvObject = new EnvObject();
 
-  for (let i = 0; i < envLines.length; i++) {
-    const trimmedLine = envLines[i].trim();
+  for (let line = 0; line < envLines.length; line++) {
+    const trimmedLine: string = envLines[line].trim();
+    const startLine: number   = line;
 
     if (!trimmedLine) {
-      log.debug('Ignoring empty line');
+      log.debug(`${line + 1} | Ignoring empty line`);
     } else if (trimmedLine.startsWith('#')) {
-      log.debug('Ignoring comment');
+      log.debug(`${line + 1} | Ignoring comment`);
     } else {
       const [key, ...valueParts] = trimmedLine.split('=');
       const value: string        = valueParts.join('=').trim();
 
       if (key === trimmedLine) {
-        log.debug(`Ignoring line without key=value: ${envLines[i]}`);
+        log.debug(`${line + 1} | Ignoring line without key=value: ${envLines[line]}`);
         continue;
       }
 
       if (value.startsWith('"') && value.endsWith('"')) {
-        log.debug(`key: ${key}, double quoted, single line`);
-        envObject[key] = value.slice(1, -1);
+        log.debug(`${line + 1} | key: ${key}, double quoted, single line`);
+        //envObject[key] = value.slice(1, -1);
+        envObject[key] = {
+          value:     value.slice(1, -1),
+          lineStart: startLine,
+          lineEnd:   line
+        };
       } else if (value.startsWith('"')) {
-        log.debug(`key: ${key}, double quoted, multiline`)
+        log.debug(`${line + 1} | key: ${key}, double quoted, multiline`)
         let multilineValue = value.slice(1);
-        while (!multilineValue.endsWith('"')) {
-          multilineValue += '\n' + envLines[++i];
+        while (!multilineValue.trim().endsWith('"')) {
+          multilineValue += '\n' + envLines[++line];
         }
-        envObject[key] = multilineValue.slice(0, -1);
+        envObject[key] = {
+          value:     multilineValue.slice(0, -1),
+          lineStart: startLine,
+          lineEnd:   line
+        };
       } else if (value.startsWith("'") && value.endsWith("'")) {
-        log.debug(`key: ${key}, single quoted, single line`);
-        envObject[key] = value.slice(1, -1);
+        log.debug(`${line + 1} | key: ${key}, single quoted, single line`);
+        envObject[key] = {
+          value:     value.slice(1, -1),
+          lineStart: startLine,
+          lineEnd:   line
+        };
       } else if (value.startsWith("'")) {
-        log.debug(`key: ${key}, single quoted, multiline`)
+        log.debug(`${line + 1} | key: ${key}, single quoted, multiline`)
         let multilineValue = value.slice(1);
-        while (!multilineValue.endsWith("'")) {
-          multilineValue += '\n' + envLines[++i];
+        while (!multilineValue.trim().endsWith("'")) {
+          multilineValue += '\n' + envLines[++line];
         }
-        envObject[key] = multilineValue.slice(0, -1);
+        envObject[key] = {
+          value:     multilineValue.slice(0, -1),
+          lineStart: startLine,
+          lineEnd:   line
+        };
       } else {
-        log.debug(`key: ${key}, un-quoted, single line`)
+        log.debug(`${line + 1} | key: ${key}, un-quoted, single line`)
         if (value.includes('"') || value.includes("'")) {
           // TODO: should we allow values that include closing quotes and escape them?
-          throw new ruleViolation(`Invalid value on line ${i + 1}: ${envLines[i]}`);
+          throw new ruleViolation(`Invalid value on line ${line + 1}: ${envLines[line]}`);
         }
-        envObject[key] = value;
+        //envObject[key] = value;
+        envObject[key] = {
+          value:     value,
+          lineStart: line,
+          lineEnd:   line
+        };
       }
     }
   }

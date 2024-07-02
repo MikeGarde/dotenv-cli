@@ -8,7 +8,7 @@ A simple way to retrieve and update variables from a .env file.
 npm i -g @mikegarde/dotenv-cli
 ```
 
-## Usage
+## CLI Usage
 
 Get a value from a .env file:
 
@@ -34,7 +34,7 @@ Return a single value from a .env file as JSON:
 dotenv <key> --json
 ```
 
-## Multiline Values
+### Multiline Values
 
 The default behavior is to output a single line value. If you want to output a multiline value, 
 you can use the `--multiline` flag:
@@ -50,7 +50,7 @@ $ dotenv RSA_KEY
 -----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKj34GkxFhD90vcNLYLInFE...
 ```
 
-## Setting a Value
+### Setting a Value
 
 Set a value in a .env file:
 
