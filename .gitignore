@@ -2,6 +2,7 @@
 .task
 .vscode
 .env
+.ds_store
 node_modules
 
 dotenv-*.tgz
