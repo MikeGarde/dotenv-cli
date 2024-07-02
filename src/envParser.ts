@@ -1,7 +1,19 @@
 import fs            from 'node:fs';
 import log           from './log.js';
 import EnvObject     from "./envObject.js";
-import ruleViolation from './ruleViolationError.js';
+import EnvParseError from "./errors/EnvParseError.js";
+
+function handleValue(value: string, line: number, startLine: number, envLines: string[], envObject: EnvObject, key: string, quote: string) {
+  let multilineValue = value.slice(1);
+  while (!multilineValue.trim().endsWith(quote)) {
+    multilineValue += '\n' + envLines[++line];
+  }
+  envObject[key] = {
+    value:     multilineValue.slice(0, -1),
+    lineStart: startLine,
+    lineEnd:   line
+  };
+}
 
 /**
  * Parse the .env file into an object
@@ -31,50 +43,17 @@ function parseEnvFile(filePath: string): EnvObject {
         continue;
       }
 
-      if (value.startsWith('"') && value.endsWith('"')) {
-        log.debug(`${line + 1} | key: ${key}, double quoted, single line`);
-        //envObject[key] = value.slice(1, -1);
-        envObject[key] = {
-          value:     value.slice(1, -1),
-          lineStart: startLine,
-          lineEnd:   line
-        };
-      } else if (value.startsWith('"')) {
-        log.debug(`${line + 1} | key: ${key}, double quoted, multiline`)
-        let multilineValue = value.slice(1);
-        while (!multilineValue.trim().endsWith('"')) {
-          multilineValue += '\n' + envLines[++line];
-        }
-        envObject[key] = {
-          value:     multilineValue.slice(0, -1),
-          lineStart: startLine,
-          lineEnd:   line
-        };
-      } else if (value.startsWith("'") && value.endsWith("'")) {
-        log.debug(`${line + 1} | key: ${key}, single quoted, single line`);
-        envObject[key] = {
-          value:     value.slice(1, -1),
-          lineStart: startLine,
-          lineEnd:   line
-        };
+      if (value.startsWith('"')) {
+        log.debug(`${line + 1} | key: ${key}, double quoted, ${value.endsWith('"') ? 'single line' : 'multiline'}`);
+        handleValue(value, line, startLine, envLines, envObject, key, '"');
       } else if (value.startsWith("'")) {
-        log.debug(`${line + 1} | key: ${key}, single quoted, multiline`)
-        let multilineValue = value.slice(1);
-        while (!multilineValue.trim().endsWith("'")) {
-          multilineValue += '\n' + envLines[++line];
-        }
-        envObject[key] = {
-          value:     multilineValue.slice(0, -1),
-          lineStart: startLine,
-          lineEnd:   line
-        };
+        log.debug(`${line + 1} | key: ${key}, single quoted, ${value.endsWith("'") ? 'single line' : 'multiline'}`);
+        handleValue(value, line, startLine, envLines, envObject, key, "'");
       } else {
         log.debug(`${line + 1} | key: ${key}, un-quoted, single line`)
         if (value.includes('"') || value.includes("'")) {
-          // TODO: should we allow values that include closing quotes and escape them?
-          throw new ruleViolation(`Invalid value on line ${line + 1}: ${envLines[line]}`);
+          throw new EnvParseError(line + 1, `Invalid value: ${envLines[line]}`);
         }
-        //envObject[key] = value;
         envObject[key] = {
           value:     value,
           lineStart: line,

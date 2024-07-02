@@ -57,6 +57,10 @@ tasks:
           exit 1
         fi
         
+        # Clear build directory
+        rm -rf build
+        git checkout -- build
+        
         task tests
 
         VERSION=$(gh release list --json tagName | jq -r '.[] | .tagName' | sort -V | tail -n 1)

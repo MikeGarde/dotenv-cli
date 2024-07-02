@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
-import {program}     from 'commander';
-import formatValue   from './formatValue.js';
-import fs            from 'node:fs';
-import path          from 'node:path';
-import parseEnvFile  from './envParser.js';
-import RuleViolation from './ruleViolationError.js';
-import * as url      from 'node:url';
+import {program}    from 'commander';
+import formatValue  from './formatValue.js';
+import fs           from 'node:fs';
+import path         from 'node:path';
+import parseEnvFile from './envParser.js';
+import * as url     from 'node:url';
 
 import log, {setLogDebug} from './log.js';
 import escapeAndQuote     from "./escapeAndQuote.js";
 import readPipe           from "./readPipe.js";
+import RuleViolationError from './errors/RuleViolationError.js';
 
 async function app() {
   const installDir: string  = path.dirname(url.fileURLToPath(import.meta.url));
@@ -38,7 +38,7 @@ async function app() {
   setLogDebug(options.debug);
 
   const stdin: string | void = await readPipe().catch((err) => {
-    throw new RuleViolation(`Error reading from stdin: ${err}`);
+    throw new RuleViolationError(`Error reading from stdin: ${err}`);
   });
 
   const envFilePath: string = options.file || '.env';
@@ -56,7 +56,7 @@ async function app() {
   let setValue: string = '';
   if (stdin && set) {
     // - cannot have both --set [value] and stdin
-    throw new RuleViolation('Cannot use --set and stdin together');
+    throw new RuleViolationError('Cannot use --set and stdin together');
   } else if (stdin) {
     setValue = stdin;
   } else if (set) {
@@ -76,27 +76,27 @@ async function app() {
   // Qualifying Rules
   // - must have a .env file
   if (!fs.existsSync(envFilePath)) {
-    throw new RuleViolation(`.env file not found: ${fullEnvPath}`);
+    throw new RuleViolationError(`.env file not found: ${fullEnvPath}`);
   }
   // - cannot have both --json and --set
   if (json && setValue) {
-    throw new RuleViolation('Cannot use --json and --set together');
+    throw new RuleViolationError('Cannot use --json and --set together');
   }
   // - must have a key if using --set
   if (setValue && !singleKey) {
-    throw new RuleViolation('Must specify a single key when using --set');
+    throw new RuleViolationError('Must specify a single key when using --set');
   }
   // - cannot have both --json and --multiline
   if (json && multiline) {
-    throw new RuleViolation('Cannot use --json and --multiline together');
+    throw new RuleViolationError('Cannot use --json and --multiline together');
   }
   // - cannot use --delete with any other options
   if (deleteKey && (setValue || json || multiline)) {
-    throw new RuleViolation('Cannot use --delete with any other options');
+    throw new RuleViolationError('Cannot use --delete with any other options');
   }
   // - must have a key if using --delete
   if (deleteKey && !singleKey) {
-    throw new RuleViolation('Must specify a single key when using --delete');
+    throw new RuleViolationError('Must specify a single key when using --delete');
   }
 
   let envObject = parseEnvFile(envFilePath);
@@ -187,7 +187,7 @@ async function app() {
 app().then(() => {
   log.debug('done');
 }).catch((error) => {
-  if (error instanceof RuleViolation) {
+  if (error instanceof RuleViolationError) {
     log.error(error.message);
   } else {
     log.error('An unexpected error occurred:', error);
