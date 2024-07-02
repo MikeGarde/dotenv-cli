@@ -1,6 +1,3 @@
-/**
- * Used to create an EnvObject that can be used to store environment variables
- */
 class EnvValue {
   value: string;
   lineStart: number;
@@ -13,31 +10,11 @@ class EnvValue {
   }
 }
 
-/**
- * Used to create an object that can be used to store environment variables
- */
 class EnvObject {
   [key: string]: EnvValue | any;
 
-  /**
-   * Constructor for the EnvObject class.
-   */
   constructor() {
     return new Proxy(this, {
-      /**
-       * GET trap that is used to get the value of EnvObject
-       */
-      // get(target, key: PropertyKey, receiver) {
-      //   if (typeof key === 'string' && typeof target[key] === 'object' && target[key] !== null) {
-      //     console.log('getting', key, target[key]);
-      //     return Reflect.get(target[key], 'value', receiver);
-      //   } else {
-      //     return Reflect.get(target, key, receiver);
-      //   }
-      // },
-      /**
-       * SET trap that is used to set the value of EnvObject
-       */
       set(target, key: PropertyKey, value, receiver) {
         if (typeof key !== 'string') {
           key = 'value';
@@ -73,9 +50,6 @@ class EnvObject {
     });
   }
 
-  /**
-   * Used to convert the EnvObject to an key/value object
-   */
   toObj(): { [key: string]: string } {
     let obj: { [key: string]: string } = {};
 
@@ -90,9 +64,6 @@ class EnvObject {
     return obj;
   }
 
-  /**
-   * Used to convert the EnvObject to a JSON string
-   */
   toJsonString(): string {
     return JSON.stringify(this.toObj());
   }

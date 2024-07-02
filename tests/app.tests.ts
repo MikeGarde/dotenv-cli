@@ -5,7 +5,7 @@ describe('app.ts', () => {
   const appPath = path.resolve(__dirname, '../build/app.js');
   const envPath = path.resolve(__dirname, '.env.test');
 
-  it('should handle missing .env file', async () => {
+  test('missing .env file', async () => {
     try {
       const nonExistent = execSync(`node ${appPath} void --file non-existent.env`);
       // This shouldn't happen
@@ -21,22 +21,22 @@ describe('app.ts', () => {
     }
   });
 
-  it('should read environment variable from .env file', () => {
+  test('read simple value', () => {
     const result = execSync(`node ${appPath} NAME --file ${envPath}`);
     expect(result.toString().trim()).toBe('dotenv-cli');
   });
 
-  it('should strip double quotes from value', () => {
+  test('read double quoted value', () => {
     const result = execSync(`node ${appPath} DOUBLE --file ${envPath}`);
     expect(result.toString().trim()).toBe('Double quotes');
   });
 
-  it('should strip single quotes from value', () => {
+  test('read single quotes from value', () => {
     const result = execSync(`node ${appPath} SINGLE --file ${envPath}`);
     expect(result.toString().trim()).toBe('Single quotes');
   });
 
-  it('missing key should return empty string and status 1', async () => {
+  test('missing key', async () => {
     try {
       const result = execSync(`node ${appPath} MISSING --file ${envPath}`);
       // This shouldn't happen
