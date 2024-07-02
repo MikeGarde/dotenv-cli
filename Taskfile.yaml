@@ -34,6 +34,11 @@ tasks:
       - src/**/*.ts
     generates:
       - build/**/*.js
+  build:clean:
+    desc: Remove build directory
+    cmds:
+      - rm -rf build
+      - git checkout -- build
 
   dev-install:
     desc: Local development setup
@@ -42,25 +47,37 @@ tasks:
       - task build
       - sudo npm install -g
 
-  publish:
-    desc: Create a new release, task publish -- [patch|minor|major]
-    silent: true
+  is-branch-safe:
+    desc: Check if the current branch is main
     vars:
-      STEP: '{{default "patch" .CLI_ARGS}}'
+      BRANCH:
+        sh: git rev-parse --abbrev-ref HEAD
     cmds:
       - |
-        STEP="{{.STEP}}"
-
-        # Only allowed on main branch
-        if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ]; then
-          echo "Not on main branch"
+        exit 0
+        if [ "{{.BRANCH}}" != "main" ] && [ "{{.BRANCH}}" != "develop" ]; then
+          echo "Not on main or develop branch"
           exit 1
         fi
-        
-        # Clear build directory
-        rm -rf build
-        git checkout -- build
-        
+
+  release-*:
+    desc: Create a new release, task release-[patch|minor|major]
+    silent: true
+    preconditions:
+      - sh: task is-branch-safe
+        msg: "Not on main or develop branch"
+    vars:
+      STEP: '{{index .MATCH 0}}'
+      BRANCH:
+        sh: git rev-parse --abbrev-ref HEAD
+      PRERELEASE:
+        sh: |
+          if [ "{{.BRANCH}}" = "develop" ]; then
+            echo "--prerelease"
+          fi
+    cmds:
+      - |
+        task build:clean
         task tests
 
         VERSION=$(gh release list --json tagName | jq -r '.[] | .tagName' | sort -V | tail -n 1)
@@ -69,14 +86,14 @@ tasks:
         PATCH=$(echo $VERSION | cut -d. -f3)
 
         echo "Current version: $VERSION"
-        if [ "$STEP" = "major" ]; then
+        if [ "{{.STEP}}" = "major" ]; then
           MAJOR=$((MAJOR+1))
           MINOR=0
           PATCH=0
-        elif [ "$STEP" = "minor" ]; then
+        elif [ "{{.STEP}}" = "minor" ]; then
           MINOR=$((MINOR+1))
           PATCH=0
-        elif [ "$STEP" = "patch" ]; then
+        elif [ "{{.STEP}}" = "patch" ]; then
           PATCH=$((PATCH+1))
         else
           echo "Invalid step: $STEP"
@@ -87,5 +104,19 @@ tasks:
 
         npm version $VERSION
         git push
-        gh release create "$VERSION" --generate-notes --target main
+        gh release create "$VERSION" --generate-notes --target {{.BRANCH}} {{.PRERELEASE}}
         npm publish --access public
+  publish:
+    desc: publish a release to npm
+    preconditions:
+      - task is-branch-safe
+    cmds:
+      - exit 0
+      - npm publish --access public
+  release-*-pub:
+    desc: Create a new release and publish it to npm, release-[patch|minor|major]-pub
+    vars:
+      STEP: '{{index .MATCH 0}}'
+    cmds:
+      - task: release-{{.STEP}}
+      - task: publish
