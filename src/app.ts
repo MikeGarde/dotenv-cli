@@ -26,7 +26,7 @@ async function app() {
     .option('-f, --file <filename>', 'Specify the .env file (default: .env)')
     .option('-j, --json', 'Output as JSON')
     .option('-m, --multiline', 'Allow multiline values')
-    .option('-s, --set [value]', 'Update the environment variable in the .env file')
+    .option('-s, --set <value>', 'Update the environment variable in the .env file')
     .option('-q, --quote', 'Quote the value when --set regardless of need')
     .option('-d, --debug', 'Output extra debugging')
     .showSuggestionAfterError(true)
@@ -40,10 +40,10 @@ async function app() {
     throw new RuleViolation(`Error reading from stdin: ${err}`);
   });
 
-  const envFilePath: string   = options.file || '.env';
-  const fullEnvPath: string   = path.resolve(envFilePath);
-  const keys: string[]        = program.args;
-  const set: string | boolean = options.set;
+  const envFilePath: string = options.file || '.env';
+  const fullEnvPath: string = path.resolve(envFilePath);
+  const keys: string[]      = program.args;
+  const set: string         = options.set;
 
   // Multiple keys or no keys assume --json
   if (keys.length > 1 || !keys.length) {
@@ -53,17 +53,12 @@ async function app() {
 
   // Determine if we are setting a value, and if so, what's the value
   let setValue: string = '';
-  if (!stdin && typeof set === 'boolean') {
-    // --set && stdin without a value
-    throw new RuleViolation('Must specify a value when using --set');
-  } else if (stdin && typeof set === 'string') {
+  if (stdin && set) {
     // - cannot have both --set [value] and stdin
     throw new RuleViolation('Cannot use --set and stdin together');
-  } else if (stdin && set) {
-    // stdin will replace --set [value] but --set will trigger the action
+  } else if (stdin) {
     setValue = stdin;
-  } else if (typeof set === 'string') {
-    // --set [value] will be used
+  } else if (set) {
     setValue = set;
   }
 
