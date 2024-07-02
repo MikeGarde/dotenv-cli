@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
 import {program}    from 'commander';
-import formatValue  from './formatValue.js';
 import fs           from 'node:fs';
 import path         from 'node:path';
-import parseEnvFile from './envParser.js';
 import * as url     from 'node:url';
+import parseEnvFile from './envParser.js';
+import handlers     from "./services/handlers.js";
 
 import log, {setLogDebug} from './log.js';
-import escapeAndQuote     from "./escapeAndQuote.js";
 import readPipe           from "./readPipe.js";
 import RuleViolationError from './errors/RuleViolationError.js';
 
@@ -105,82 +104,11 @@ async function app() {
     log.debug('Outputting entire .env file as JSON');
     log.info(envObject.toJsonString());
   } else if (deleteKey) {
-    const key: string = keys[0];
-
-    log.debug(`Deleting "${key}"`);
-
-    if (envObject[key]) {
-      const lineStart = envObject[key].lineStart;
-      const lineEnd   = envObject[key].lineEnd;
-      log.debug(`Deleting lines ${lineStart}-${lineEnd}`);
-
-      // Read the file and split it into an array of lines
-      let lines: string[] = fs.readFileSync(envFilePath, 'utf8').split('\n');
-
-      // Remove the lines between lineStart and lineEnd
-      lines.splice(lineStart, lineEnd - lineStart + 1);
-
-      // Join the lines back together and write the result back to the file
-      fs.writeFileSync(envFilePath, lines.join('\n'));
-    } else {
-      log.debug(`Environment variable "${key}" not found`);
-      process.exitCode = 1;
-    }
+    handlers.deleteKey(envObject, envFilePath, keys[0]);
   } else if (setValue) {
-    const key: string      = keys[0];
-    const newValue: string = escapeAndQuote(setValue, quoteSet);
-    const newLines: string = `${key}=${newValue}`;
-
-    log.debug(`Updating "${key}"`);
-
-    // Do we want to update or append the .env file?
-    if (envObject[key]) {
-      log.debug('Updating existing key', envObject[key]);
-      const lineStart = envObject[key].lineStart;
-      const lineEnd   = envObject[key].lineEnd;
-      log.debug(`Replacing lines ${lineStart}-${lineEnd}`);
-
-      // Split the new lines into an array
-      let newLinesArray: string[] = newLines.split('\n');
-
-      // Read the file and split it into an array of lines
-      let lines: string[] = fs.readFileSync(envFilePath, 'utf8').split('\n');
-
-      // Replace the lines between lineStart and lineEnd
-      lines.splice(lineStart, lineEnd - lineStart + 1, ...newLinesArray);
-
-      // Join the lines back together and write the result back to the file
-      fs.writeFileSync(envFilePath, lines.join('\n'));
-    } else {
-      log.debug(`Appending "${key}" to "${envFilePath}"`);
-
-      fs.writeFileSync(envFilePath, `${newLines}\n`, {flag: 'a'});
-    }
+    handlers.setValue(envObject, envFilePath, keys[0], setValue, quoteSet);
   } else {
-    let result: string = '';
-
-    for (const key of keys) {
-      log.debug(`Getting "${key}"`);
-
-      let value = '';
-
-      if (!envObject[key]) {
-        log.debug(`Environment variable "${key}" not found`);
-        process.exitCode = 1;
-      } else {
-        value = formatValue(envObject[key].value, multiline);
-      }
-
-      value = json ? (value ? `"${value}"` : 'null') : value;
-      result += json ? `"${key}": ${value},` : `${value}\n`;
-    }
-
-    // Removes trailing newline or comma
-    result = result.slice(0, -1);
-    if (json) {
-      result = `{${result}}`;
-    }
-    log.info(result);
+    handlers.getValue(envObject, keys, json, multiline);
   }
 }
 
