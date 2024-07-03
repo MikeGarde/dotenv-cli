@@ -104,7 +104,6 @@ tasks:
     preconditions:
       - task is-branch-safe
     cmds:
-      - exit 0
       - npm publish --access public
   release-*-pub:
     desc: Create a new release and publish it to npm, release-[patch|minor|major]-pub
