@@ -6,4 +6,5 @@ export default {
   moduleNameMapper: {
     '(.+)\\.js': '$1', // Remove the .js extension
   },
+  verbose: true,
 };
