@@ -1,8 +1,12 @@
 # dotenv-cli
 
-A simple way to retrieve and update variables from a .env file.
+A simple way to retrieve, update, or delete .env variables directly from the command line.
 
 ## Install
+
+Find it on
+[npm](https://www.npmjs.com/package/@mikegarde/dotenv-cli) or
+[GitHub](https://github.com/MikeGarde/dotenv-cli)
 
 ```shell
 npm i -g @mikegarde/dotenv-cli
@@ -28,10 +32,11 @@ Return a .env file as JSON:
 dotenv --json
 ```
 
-Return a single value from a .env file as JSON:
-
 ```shell
-dotenv <key> --json
+$ dotenv --json | jq 'to_entries | map(select(.key | startswith("DB_")))[] | "\(.key)=\(.value)"'
+"DB_HOST=localhost"
+"DB_USER=root"
+"DB_PASS=password"
 ```
 
 ### Multiline Values
@@ -63,19 +68,36 @@ Or pipe a value in:
 echo <value> | dotenv <key>
 ```
 
-This example will 
- - Generate a new RSA key pair and store it in the .env file
- - Utilizing the stored private key it will generate a public key and store it in the .env file
-
-```shell
-openssl genpkey -algorithm RSA -outform PEM -pkeyopt rsa_keygen_bits:2048 2>/dev/null | dotenv RSA_KEY
-dotenv RSA_KEY --multiline | openssl rsa -pubout 2>/dev/null | dotenv RSA_PUB
-```
-
 ### Deleting a Value
 
 Delete a value from a .env file:
 
 ```shell
 dotenv <key> --delete
+```
+
+## Examples
+
+### RSA Key Pair
+
+1. **Private Key:** Generate a new key using the `openssl` command. The private key is then stored in the .env file under the variable `RSA_KEY`.
+2. **Public Key** The `dotenv` command, with the --multiline flag, retrieves the stored private key and pipes it back to openssl. `openssl` then generates a corresponding public key. This public key is stored in the `.env` file under the variable `RSA_PUB`.
+
+```shell
+openssl genpkey -algorithm RSA -outform PEM -pkeyopt rsa_keygen_bits:2048 2>/dev/null | dotenv RSA_KEY
+dotenv RSA_KEY --multiline | openssl rsa -pubout 2>/dev/null | dotenv RSA_PUB
+```
+
+### App Version
+
+This demonstrates two methods for updating the `APP_VERSION` in your `.env` file. The `sed` command is versatile and powerful, allowing for complex text manipulations. On the other hand, `dotenv` provides a more readable and straightforward syntax.
+
+```shell
+NEW_VERSION=3.22.1
+
+# Using sed
+sed -i "s/^APP_VERSION=.*$/APP_VERSION=$NEW_VERSION/" .env
+
+# Using dotenv
+dotenv APP_VERSION --set $NEW_VERSION
 ```
