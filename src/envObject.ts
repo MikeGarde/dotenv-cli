@@ -64,8 +64,12 @@ class EnvObject {
     return obj;
   }
 
-  toJsonString(): string {
-    return JSON.stringify(this.toObj());
+  toJsonString(pretty:boolean = false): string {
+    if (pretty) {
+      return JSON.stringify(this.toObj(), null, 2);
+    } else {
+      return JSON.stringify(this.toObj());
+    }
   }
 }
 
