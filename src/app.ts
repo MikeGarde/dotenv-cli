@@ -6,10 +6,13 @@ import path         from 'node:path';
 import * as url     from 'node:url';
 import parseEnvFile from './envParser.js';
 import handlers     from "./services/handlers.js";
+import readPipe     from "./readPipe.js";
+import EnvObject    from './envObject.js';
 
-import log, {setLogDebug} from './log.js';
-import readPipe           from "./readPipe.js";
-import RuleViolationError from './errors/RuleViolationError.js';
+import log, {setLogDebug}         from './log.js';
+import {Options, qualifyingRules} from './components/qualifyingRules.js';
+import RuleViolationError         from './errors/RuleViolationError.js';
+import escapeAndQuote             from "./escapeAndQuote.js";
 
 async function app() {
   const installDir: string  = path.dirname(url.fileURLToPath(import.meta.url));
@@ -32,23 +35,23 @@ async function app() {
     .showSuggestionAfterError(true)
     .parse(process.argv);
 
-  const options = program.opts();
+  const cliOptions = program.opts();
 
-  setLogDebug(options.debug);
+  setLogDebug(cliOptions.debug);
 
   const stdin: string | void = await readPipe().catch((err) => {
     throw new RuleViolationError(`Error reading from stdin: ${err}`);
   });
 
-  const envFilePath: string = options.file || '.env';
+  const envFilePath: string = cliOptions.file || '.env';
   const fullEnvPath: string = path.resolve(envFilePath);
   const keys: string[]      = program.args;
-  const set: string         = options.set;
+  const set: string         = cliOptions.set;
 
   // Multiple keys or no keys assume --json
   if (keys.length > 1 || !keys.length) {
     log.debug('Key count (0 or >1) defaulting to JSON');
-    options.json = true;
+    cliOptions.json = true;
   }
 
   // Determine if we are setting a value, and if so, what's the value
@@ -63,52 +66,43 @@ async function app() {
   }
 
   log.debug('Keys:', keys);
-  log.debug('Options:', options);
   log.debug('File:', fullEnvPath);
 
-  const json: boolean      = (options.json !== undefined);
-  const multiline: boolean = (options.multiline !== undefined);
-  const quoteSet: boolean  = (options.quote !== undefined);
-  const deleteKey: boolean = (options.delete !== undefined);
-  const singleKey: boolean = (keys.length === 1);
-
-  // Qualifying Rules
-  // - must have a .env file
-  if (!fs.existsSync(envFilePath)) {
+  // Must have a .env file
+  if (!fs.existsSync(fullEnvPath)) {
     throw new RuleViolationError(`.env file not found: ${fullEnvPath}`);
   }
-  // - cannot have both --json and --set
-  if (json && setValue) {
-    throw new RuleViolationError('Cannot use --json and --set together');
-  }
-  // - must have a key if using --set
-  if (setValue && !singleKey) {
-    throw new RuleViolationError('Must specify a single key when using --set');
-  }
-  // - cannot have both --json and --multiline
-  if (json && multiline) {
-    throw new RuleViolationError('Cannot use --json and --multiline together');
-  }
-  // - cannot use --delete with any other options
-  if (deleteKey && (setValue || json || multiline)) {
-    throw new RuleViolationError('Cannot use --delete with any other options');
-  }
-  // - must have a key if using --delete
-  if (deleteKey && !singleKey) {
-    throw new RuleViolationError('Must specify a single key when using --delete');
-  }
 
-  let envObject = parseEnvFile(envFilePath);
+  let options: Options = {
+    fullEnvPath:   fullEnvPath,
+    envObject:     new EnvObject(),
+    json:          (cliOptions.json !== undefined),
+    multiline:     (cliOptions.multiline !== undefined),
+    quote:         (cliOptions.quote !== undefined),
+    action:        {
+      set:    (setValue !== ''),
+      delete: (cliOptions.delete !== undefined),
+    },
+    singleKey:     (keys.length === 1),
+    returnAllKeys: (keys.length === 0),
+    targetKeys:    keys,
+    setValue:      escapeAndQuote(setValue, (cliOptions.quote !== undefined)),
+  };
+  log.debug('Options:', options);
 
-  if (json && !keys.length) {
+  qualifyingRules(options);
+
+  options.envObject = parseEnvFile(envFilePath);
+
+  if (options.json && options.returnAllKeys) {
     log.debug('Outputting entire .env file as JSON');
-    log.info(envObject.toJsonString());
-  } else if (deleteKey) {
-    handlers.deleteKey(envObject, envFilePath, keys[0]);
-  } else if (setValue) {
-    handlers.setValue(envObject, envFilePath, keys[0], setValue, quoteSet);
+    log.info(options.envObject.toJsonString());
+  } else if (options.action.delete) {
+    handlers.deleteKey(options);
+  } else if (options.action.set) {
+    handlers.setValue(options);
   } else {
-    handlers.getValue(envObject, keys, json, multiline);
+    handlers.getValue(options);
   }
 }
 

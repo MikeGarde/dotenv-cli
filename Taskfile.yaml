@@ -13,11 +13,6 @@ tasks:
     cmds:
       - npm run tests
 
-  eslint:
-    desc: Lint JavaScript files
-    cmds:
-      - npm run eslint:check
-
   build:
     desc: Compile TypeScript to JavaScript
     cmds:
@@ -54,7 +49,6 @@ tasks:
         sh: git rev-parse --abbrev-ref HEAD
     cmds:
       - |
-        exit 0
         if [ "{{.BRANCH}}" != "main" ] && [ "{{.BRANCH}}" != "develop" ]; then
           echo "Not on main or develop branch"
           exit 1
