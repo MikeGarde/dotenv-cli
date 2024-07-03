@@ -1,4 +1,4 @@
-class EnvValue {
+export class EnvValue {
   value: string;
   lineStart: number;
   lineEnd: number;
