@@ -96,7 +96,7 @@ async function app() {
 
   if (options.json && options.returnAllKeys) {
     log.debug('Outputting entire .env file as JSON');
-    log.info(options.envObject.toJsonString());
+    log.info(options.envObject.toJsonString(options.multiline));
   } else if (options.action.delete) {
     handlers.deleteKey(options);
   } else if (options.action.set) {

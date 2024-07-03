@@ -27,10 +27,6 @@ export function qualifyingRules(settings: Options) {
   if (settings.action.set && !settings.singleKey) {
     throw new RuleViolationError('Must specify a single key when using --set');
   }
-  // - cannot have both --json and --multiline
-  if (settings.json && settings.multiline) {
-    throw new RuleViolationError('Cannot use --json and --multiline together');
-  }
   // - cannot use --delete with any other options
   if (settings.action.delete && (settings.action.set || settings.json || settings.multiline)) {
     throw new RuleViolationError('Cannot use --delete with any other options');

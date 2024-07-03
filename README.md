@@ -32,13 +32,6 @@ Return a .env file as JSON:
 dotenv --json
 ```
 
-```shell
-$ dotenv --json | jq 'to_entries | map(select(.key | startswith("DB_")))[] | "\(.key)=\(.value)"'
-"DB_HOST=localhost"
-"DB_USER=root"
-"DB_PASS=password"
-```
-
 ### Multiline Values
 
 The default behavior is to output a single line value. If you want to output a multiline value, 
@@ -81,11 +74,11 @@ dotenv <key> --delete
 ### RSA Key Pair
 
 1. **Private Key:** Generate a new key using the `openssl` command. The private key is then stored in the .env file under the variable `RSA_KEY`.
-2. **Public Key** The `dotenv` command, with the --multiline flag, retrieves the stored private key and pipes it back to openssl. `openssl` then generates a corresponding public key. This public key is stored in the `.env` file under the variable `RSA_PUB`.
+2. **Public Key** The `dotenv` command, with the `--multiline` flag, retrieves the stored private key and pipes it back to openssl. `openssl` then generates a corresponding public key. This public key is stored in the `.env` file under the variable `RSA_PUB`.
 
 ```shell
 openssl genpkey -algorithm RSA -outform PEM -pkeyopt rsa_keygen_bits:2048 2>/dev/null | dotenv RSA_KEY
-dotenv RSA_KEY --multiline | openssl rsa -pubout 2>/dev/null | dotenv RSA_PUB
+dotenv RSA_KEY -m | openssl rsa -pubout 2>/dev/null | dotenv RSA_PUB
 ```
 
 ### App Version
@@ -100,4 +93,21 @@ sed -i "s/^APP_VERSION=.*$/APP_VERSION=$NEW_VERSION/" .env
 
 # Using dotenv
 dotenv APP_VERSION --set $NEW_VERSION
+```
+
+### JSON Output
+
+Make it pretty with `jq`:
+
+```shell
+dotenv --json | jq
+```
+
+Or filter the output:
+
+```shell
+$ dotenv --json | jq 'to_entries | map(select(.key | startswith("DB_")))[] | "\(.key)=\(.value)"'
+"DB_HOST=localhost"
+"DB_USER=root"
+"DB_PASS=password"
 ```
