@@ -16,8 +16,7 @@
   ],
   "scripts": {
     "tests": "npx jest",
-    "build": "npx tsc",
-    "prepare": "npm run build"
+    "build": "npx tsc"
   },
   "engines": {
     "node": ">=14.20.1",
