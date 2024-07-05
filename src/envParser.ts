@@ -64,7 +64,14 @@ function parseEnvFile(filePath: string): EnvObject {
         envObject[key] = extractLines(envLines, lineStart, lineCurrent, true);
       } else {
         log.debug(`${lineCurrent + 1} | key: ${key}, un-quoted, single line`)
-        if (value.includes('"') || value.includes("'")) {
+
+        // If a list we'll allow it
+        const hasQuotes: boolean        = value.includes('"') || value.includes("'");
+        const evenDoubleQuotes: boolean = value.split('"').length % 2 === 0;
+        const evenSingleQuotes: boolean = value.split("'").length % 2 === 0;
+        const isList: boolean           = value.startsWith('[') && value.endsWith(']');
+
+        if (hasQuotes && (!evenDoubleQuotes || !evenSingleQuotes) && !isList) {
           throw new EnvParseError(lineCurrent + 1, `Invalid value: ${envLines[lineCurrent]}`);
         }
         envObject[key] = extractLines(envLines, lineStart, lineCurrent, false);
