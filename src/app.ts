@@ -27,6 +27,7 @@ async function app() {
     .argument('[key...]', 'Environment variable key')
     .option('-f, --file <filename>', 'Specify the .env file (default: .env)')
     .option('-j, --json', 'Output as JSON')
+    .option('--no-json', 'Output as plain text')
     .option('-m, --multiline', 'Allow multiline values')
     .option('-s, --set <value>', 'Update the environment variable in the .env file')
     .option('-q, --quote', 'Quote the value when --set regardless of need')
@@ -47,12 +48,6 @@ async function app() {
   const fullEnvPath: string = path.resolve(envFilePath);
   const keys: string[]      = program.args;
   const set: string         = cliOptions.set;
-
-  // Multiple keys or no keys assume --json
-  if (keys.length > 1 || !keys.length) {
-    log.debug('Key count (0 or >1) defaulting to JSON');
-    cliOptions.json = true;
-  }
 
   // Determine if we are setting a value, and if so, what's the value
   let setValue: string = '';
@@ -76,7 +71,8 @@ async function app() {
   let options: Options = {
     fullEnvPath:   fullEnvPath,
     envObject:     new EnvObject(),
-    json:          (cliOptions.json !== undefined),
+    json:          (process.argv.includes('--json')),    // commander.js sets json instead of no-json
+    noJson:        (process.argv.includes('--no-json')), // commander.js fails to parse this
     multiline:     (cliOptions.multiline !== undefined),
     quote:         (cliOptions.quote !== undefined),
     action:        {
@@ -88,11 +84,36 @@ async function app() {
     targetKeys:    keys,
     setValue:      escapeAndQuote(setValue, (cliOptions.quote !== undefined)),
   };
+
+  // Multiple keys or no keys assume --json
+  if ((keys.length > 1 || !keys.length) && !options['noJson']) {
+    log.debug('Key count (0 or >1) defaulting to JSON');
+    options.json = true;
+  }
   log.debug('Options:', options);
 
   qualifyingRules(options);
 
   options.envObject = parseEnvFile(envFilePath);
+
+  if (keys.length === 1 && !options['noJson']) {
+    log.debug('Single key, and not --no-json, checking for wildcard');
+
+    if (options.targetKeys[0].includes('*')) {
+      log.debug('Wildcard found')
+      const target: string  = options.targetKeys[0].replace('*', '.*');
+      const regex: RegExp = new RegExp('^' + target + '$');
+      let i: number       = 0;
+      for (const key in options.envObject) {
+        if (key.match(regex)) {
+          log.debug(`Adding "${key}" to targetKeys`);
+          options.targetKeys[i] = key;
+          i++;
+        }
+      }
+      options.json = true;
+    }
+  }
 
   if (options.json && options.returnAllKeys) {
     log.debug('Outputting entire .env file as JSON');

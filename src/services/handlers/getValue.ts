@@ -5,6 +5,10 @@ import {Options}   from "../../components/qualifyingRules.js";
 export default function getValue(options: Options) {
   let result: string = '';
 
+  if (options.targetKeys.length === 0) {
+    options.targetKeys = Object.keys(options.envObject);
+  }
+
   for (const key of options.targetKeys) {
     log.debug(`Getting "${key}"`);
 

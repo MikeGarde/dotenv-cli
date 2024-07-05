@@ -26,10 +26,21 @@ Get a value from a .env.example file:
 dotenv <key> --file .env.example
 ```
 
+### JSON
+
+By default multiple keys are returned as a JSON object. To return a single key as a JSON object, use the `--json` flag.
+To not return a JSON object, use the `--no-json` flag.
+
 Return a .env file as JSON:
 
 ```shell
-dotenv --json
+dotenv
+```
+
+Wildcard search:
+
+```shell
+dotenv "DB_*"
 ```
 
 ### Multiline Values

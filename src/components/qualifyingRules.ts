@@ -6,6 +6,7 @@ export interface Options {
   fullEnvPath: string;
   envObject: EnvObject;
   json: boolean;
+  noJson: boolean;
   multiline: boolean;
   quote: boolean;
   action: {
