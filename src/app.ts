@@ -96,6 +96,25 @@ async function app() {
 
   options.envObject = parseEnvFile(envFilePath);
 
+  if (keys.length === 1 && !options['noJson']) {
+    log.debug('Single key, and not --no-json, checking for wildcard');
+
+    if (options.targetKeys[0].includes('*')) {
+      log.debug('Wildcard found')
+      const target: string  = options.targetKeys[0].replace('*', '.*');
+      const regex: RegExp = new RegExp('^' + target + '$');
+      let i: number       = 0;
+      for (const key in options.envObject) {
+        if (key.match(regex)) {
+          log.debug(`Adding "${key}" to targetKeys`);
+          options.targetKeys[i] = key;
+          i++;
+        }
+      }
+      options.json = true;
+    }
+  }
+
   if (options.json && options.returnAllKeys) {
     log.debug('Outputting entire .env file as JSON');
     log.info(options.envObject.toJsonString(options.multiline));
