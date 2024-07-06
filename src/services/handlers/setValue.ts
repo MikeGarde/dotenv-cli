@@ -6,7 +6,7 @@ export default function setValue(options: Options) {
   const key: string      = options.targetKeys[0];
   const newLines: string = `${key}=${options.setValue}`;
 
-  log.debug(`Updating "${key}"`);
+  log.debug(`Updating or adding "${key}"`);
 
   // Do we want to update or append the .env file?
   if (options.envObject[key]) {

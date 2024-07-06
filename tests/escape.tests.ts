@@ -31,4 +31,19 @@ describe('Escape and Quote', () => {
     const result: string = escapeAndQuote('with\'quote', true);
     expect(result).toBe('"with\'quote"');
   });
+
+  test('list', () => {
+    const result: string = escapeAndQuote('["one", "two", "three"]', false);
+    expect(result).toBe('["one", "two", "three"]');
+  });
+
+  test('quoted list', () => {
+    const result: string = escapeAndQuote('"["one", "two", "three"]"', false);
+    expect(result).toBe('["one", "two", "three"]');
+  });
+
+  test('escaped list', () => {
+    const result: string = escapeAndQuote('[\"one\", \"two\", \"three\"]', false);
+    expect(result).toBe('["one", "two", "three"]');
+  });
 });

@@ -64,17 +64,36 @@ describe('app.ts', () => {
     expect(getCommand.toString().trim()).toBe('New stdin value');
   });
 
+  test('add list', () => {
+    const setCommand: Buffer = execSync(`node ${appPath} LIST --set '["one", "two", "three"]' --file ${envPath}`);
+    const getCommand: Buffer = execSync(`node ${appPath} LIST --file ${envPath}`);
+
+    expect(setCommand.toString().trim()).toBe('');
+    expect(getCommand.toString().trim()).toBe('["one", "two", "three"]');
+  });
+
+  test('update list', () => {
+    const setCommand: Buffer = execSync(`node ${appPath} LIST --set "[\\"four\\", \\"five\\", \\"six\\"]" --file ${envPath}`);
+    const getCommand: Buffer = execSync(`node ${appPath} LIST --file ${envPath}`);
+
+    expect(setCommand.toString().trim()).toBe('');
+    expect(getCommand.toString().trim()).toBe('["four", "five", "six"]');
+  });
+
   test('remove all new test keys', () => {
     const delOne: Buffer     = execSync(`node ${appPath} NEW_ONE --delete --file ${envPath}`);
     const delTwo: Buffer     = execSync(`node ${appPath} NEW_TWO --delete --file ${envPath}`);
+    const delList: Buffer    = execSync(`node ${appPath} LIST --delete --file ${envPath}`);
     const getCommand: Buffer = execSync(`node ${appPath} --file ${envPath}`);
     const allJson: any       = JSON.parse(getCommand.toString().trim());
     const keys: string[]     = Object.keys(allJson);
 
     expect(delOne.toString().trim()).toBe('');
     expect(delTwo.toString().trim()).toBe('');
+    expect(delList.toString().trim()).toBe('');
     expect(keys).not.toContain('NEW_ONE');
     expect(keys).not.toContain('NEW_TWO');
+    expect(keys).not.toContain('LIST');
   });
 
   test('after above .env file is unchanged', () => {
