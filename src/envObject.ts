@@ -4,9 +4,9 @@ export class EnvValue {
   lineEnd: number;
 
   constructor(value: string, lineStart: number = -1, lineEnd: number = -1) {
-    this.value = value;
+    this.value     = value;
     this.lineStart = lineStart;
-    this.lineEnd = lineEnd;
+    this.lineEnd   = lineEnd;
   }
 }
 
@@ -40,9 +40,9 @@ class EnvObject {
         } else {
           // TODO: let's not allow this
           target[key as string] = {
-            value: value,
+            value:     value,
             lineStart: -1, // You might want to set these values appropriately
-            lineEnd: -1
+            lineEnd:   -1
           };
         }
         return true;
@@ -54,8 +54,8 @@ class EnvObject {
     let obj: { [key: string]: string } = {};
 
     for (const key in this) {
-      const keyName = key as string;
-      const value = this[keyName].value;
+      const keyName: string = key as string;
+      const value           = this[keyName].value;
 
       if (typeof value === 'string') {
         obj[keyName] = value;
@@ -64,7 +64,7 @@ class EnvObject {
     return obj;
   }
 
-  toJsonString(pretty:boolean = false): string {
+  toJsonString(pretty: boolean = false): string {
     if (pretty) {
       return JSON.stringify(this.toObj(), null, 2);
     } else {

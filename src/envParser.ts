@@ -13,13 +13,25 @@ function getEndLine(envLines: string[], startLine: number, quoteType: string): n
 }
 
 function extractLines(envLines: string[], startLine: number, endLine: number, quoted: boolean): EnvValue {
-  let allLines = envLines.slice(startLine, endLine + 1);
-  allLines[0]  = allLines[0].split('=')[1];
+  let allLines: string[] = envLines.slice(startLine, endLine + 1);
+  allLines[0]            = allLines[0].split('=')[1];
+  let blob: string       = allLines.join('\n').trim();
 
-  let blob     = allLines.join('\n').trim();
   if (quoted) {
     blob = blob.slice(1, -1);
   }
+
+  if (blob.startsWith('[') && blob.endsWith(']')) {
+    let arr: string[] = [];
+    try {
+      arr = JSON.parse(blob);
+    } catch (e) {
+      throw new EnvParseError(startLine + 1, `Invalid list: ${blob}`);
+    }
+    arr  = arr.map((item: string) => `"${item}"`);
+    blob = '[' + arr.join(', ') + ']';
+  }
+
   return {
     value:     blob,
     lineStart: startLine,
@@ -27,11 +39,6 @@ function extractLines(envLines: string[], startLine: number, endLine: number, qu
   };
 }
 
-/**
- * Parse the .env file into an object
- *
- * @param filePath
- */
 function parseEnvFile(filePath: string): EnvObject {
   const envContent: string   = fs.readFileSync(filePath, 'utf8');
   const envLines: string[]   = envContent.split('\n');
@@ -62,16 +69,15 @@ function parseEnvFile(filePath: string): EnvObject {
         log.debug(`${lineCurrent + 1} | key: ${key}, single quoted, ${value.endsWith("'") ? 'single line' : 'multiline'}`);
         lineCurrent    = getEndLine(envLines, lineStart, "");
         envObject[key] = extractLines(envLines, lineStart, lineCurrent, true);
+      } else if (value.startsWith('[')) {
+        log.debug(`${lineCurrent + 1} | key: ${key}, list, ${value.endsWith(']') ? 'single line' : 'multiline'}`);
+        lineCurrent    = getEndLine(envLines, lineStart, ']');
+        envObject[key] = extractLines(envLines, lineStart, lineCurrent, false);
       } else {
         log.debug(`${lineCurrent + 1} | key: ${key}, un-quoted, single line`)
 
-        // If a list we'll allow it
-        const hasQuotes: boolean        = value.includes('"') || value.includes("'");
-        const evenDoubleQuotes: boolean = value.split('"').length % 2 === 0;
-        const evenSingleQuotes: boolean = value.split("'").length % 2 === 0;
-        const isList: boolean           = value.startsWith('[') && value.endsWith(']');
-
-        if (hasQuotes && (!evenDoubleQuotes || !evenSingleQuotes) && !isList) {
+        const hasQuotes: boolean = value.includes('"') || value.includes("'");
+        if (hasQuotes) {
           throw new EnvParseError(lineCurrent + 1, `Invalid value: ${envLines[lineCurrent]}`);
         }
         envObject[key] = extractLines(envLines, lineStart, lineCurrent, false);

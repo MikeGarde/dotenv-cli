@@ -5,6 +5,8 @@ describe('app.ts', () => {
   const appPath = path.resolve(__dirname, '../build/app.js');
   const envPath = path.resolve(__dirname, '.env.test');
 
+  const badListPath = path.resolve(__dirname, 'envFiles/badList.env');
+
   test('missing .env file', async () => {
     try {
       const nonExistent = execSync(`node ${appPath} void --file non-existent.env`);
@@ -50,5 +52,21 @@ describe('app.ts', () => {
       expect(parsedError.status).toEqual(1);
       expect(errorMsg).toBe('');
     }
+  });
+
+  test('valid single line list', () => {
+    const result = execSync(`node ${appPath} LIST_SINGLE_LINE --file ${envPath}`);
+    expect(result.toString().trim()).toBe('["one", "two", "three"]');
+  });
+
+  test('valid multi-line list', () => {
+    const result = execSync(`node ${appPath} LIST_MULTI_LINE --file ${envPath}`);
+    expect(result.toString().trim()).toBe('["one", "two", "three"]');
+  });
+
+  test('invalid list throws error', () => {
+    expect(() => {
+      execSync(`node ${appPath} BAD_LIST --file ${badListPath}`);
+    }).toThrow('EnvParseError');
   });
 });
