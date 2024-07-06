@@ -7,6 +7,6 @@ describe('envParse', () => {
 
     // TODO: Race conditions by the setAndDelete tests may cause this number to vary upward
     // TODO: expect(envCount).toBe(7);
-    expect(envCount).toBeGreaterThanOrEqual(8);
+    expect(envCount).toBeGreaterThanOrEqual(9);
   });
 });
