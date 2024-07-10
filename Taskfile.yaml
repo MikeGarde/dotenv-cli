@@ -106,7 +106,7 @@ tasks:
     preconditions:
       - task is-branch-safe
     cmds:
-      - npm publish --access public
+      - npm publish --access public --registry https://registry.npmjs.org
   release:publish:*:
     desc: Create a new release and publish it to npm, release-[patch|minor|major]-pub
     vars:
