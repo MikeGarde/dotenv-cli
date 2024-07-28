@@ -14,7 +14,7 @@ jobs:
           node-version: latest
       - run: npm install
       - run: npm run build
-      - run: npm run tests
+      - run: npm run test
 
   publish-gpr:
     needs: build
