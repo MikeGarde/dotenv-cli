@@ -6,4 +6,3 @@
 node_modules
 
 dotenv-*.tgz
-package-lock.json
