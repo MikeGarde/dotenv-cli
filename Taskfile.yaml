@@ -6,14 +6,12 @@ tasks:
     cmds:
       - task --list --sort alphanumeric
 
-  tests:
-    aliases:
-      - test
+  test:
     desc: Run tests
     deps:
       - build
     cmds:
-      - npm run tests
+      - npm run test
 
   build:
     desc: Compile TypeScript to JavaScript
@@ -74,7 +72,7 @@ tasks:
     cmds:
       - |
         task build:clean
-        task tests
+        task test
 
         VERSION=$(gh release list --json tagName | jq -r '.[] | .tagName' | sort -V | tail -n 1)
         MAJOR=$(echo $VERSION | cut -d. -f1)
