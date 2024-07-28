@@ -98,7 +98,10 @@ tasks:
 
         npm version $VERSION
         git push
-        gh release create "$VERSION" --generate-notes --target {{.BRANCH}} {{.PRERELEASE}}
+        task build
+        zip -r build.zip build
+        gh release create "$VERSION" --generate-notes --target {{.BRANCH}} {{.PRERELEASE}} build.zip
+        rm build.zip
   publish:
     desc: publish a release to npm
     preconditions:
