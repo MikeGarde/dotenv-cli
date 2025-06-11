@@ -1,4 +1,4 @@
-import parseEnvFile, { EnvObject } from '../src/envParser';
+import parseEnvFile, { EnvObject } from '../src/envParser.js';
 
 describe('envParse', () => {
   test('parse file', () => {

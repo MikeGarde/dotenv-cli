@@ -38,6 +38,7 @@ tasks:
   dev-install:
     desc: Local development setup
     cmds:
+      - npm uninstall -g @mikegarde/dotenv-cli || true
       - npm install
       - task build
       - sudo npm install -g
