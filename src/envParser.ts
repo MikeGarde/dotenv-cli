@@ -85,6 +85,8 @@ function parseEnvFile(filePath: string): EnvObject {
     }
   }
 
+  envObject.resolveNestedVariables();
+
   return envObject;
 }
 

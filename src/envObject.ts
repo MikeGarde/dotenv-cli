@@ -1,3 +1,5 @@
+import log from './log.js';
+
 export class EnvValue {
   value: string;
   lineStart: number;
@@ -48,6 +50,39 @@ class EnvObject {
         return true;
       }
     });
+  }
+
+  resolveNestedVariables(): void {
+    const variablePattern = /\$\{([a-zA-Z0-9_]+)\}/g;
+
+    for (const key in this) {
+      const envValue = this[key] as EnvValue;
+      if (envValue instanceof EnvValue) {
+        let value = envValue.value;
+
+        if (!value.includes('${')) {
+          continue;
+        }
+
+        let previousValue;
+        do {
+          previousValue = value;
+          value = value.replace(variablePattern, (match: string, varName: string): string => {
+            const nestedEnvValue = this[varName] as EnvValue;
+            if (nestedEnvValue instanceof EnvValue) {
+              log.debug(`Replacing variable ${varName} with value ${nestedEnvValue.value}`);
+              return nestedEnvValue.value;
+            }
+            log.debug(`Variable ${varName} not found, leaving as is`);
+            return match;
+          });
+        } while (value !== previousValue);
+
+        if (value !== envValue.value) {
+          envValue.value = value;
+        }
+      }
+    }
   }
 
   toObj(): { [key: string]: string } {
