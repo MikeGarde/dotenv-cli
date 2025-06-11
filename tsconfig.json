@@ -9,9 +9,11 @@
     "declaration": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ES2022"
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "allowJs": true,
+    "resolveJsonModule": true
   },
   "include": [
     "src/**/*.ts"
