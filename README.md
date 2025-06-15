@@ -1,4 +1,8 @@
 # dotenv-cli
+[![NPM Version](https://img.shields.io/npm/v/%40mikegarde%2Fdotenv-cli)](https://www.npmjs.com/package/@mikegarde/dotenv-cli)
+[![NPM Unpacked Size](https://img.shields.io/npm/unpacked-size/%40mikegarde%2Fdotenv-cli)](https://www.npmjs.com/package/@mikegarde/dotenv-cli)
+[![NPM Downloads](https://img.shields.io/npm/dy/%40mikegarde%2Fdotenv-cli)](https://www.npmjs.com/package/@mikegarde/dotenv-cli)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mikegarde/dotenv-cli/node.tests.yml)](https://github.com/MikeGarde/dotenv-cli/actions)
 
 A simple way to retrieve, update, or delete .env variables directly from the command line.
 
