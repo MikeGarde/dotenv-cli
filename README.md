@@ -80,6 +80,19 @@ Delete a value from a .env file:
 dotenv <key> --delete
 ```
 
+### Using DOTENV_FILE Environment Variable
+
+You can define the `DOTENV_FILE` environment variable in your shell or script to specify the `.env` file to use, instead 
+of passing the `--file` option every time.
+
+```shell
+export DOTENV_FILE=.env.example
+dotenv <key>
+```
+
+This will use the `.env.example` file automatically. If the `--file` option is provided, it will override the 
+`DOTENV_FILE` environment variable.
+
 ## Examples
 
 ### RSA Key Pair
@@ -111,13 +124,13 @@ dotenv APP_VERSION --set $NEW_VERSION
 Make it pretty with `jq`:
 
 ```shell
-dotenv --json | jq
+dotenv | jq
 ```
 
 Or filter the output:
 
 ```shell
-$ dotenv --json | jq 'to_entries | map(select(.key | startswith("DB_")))[] | "\(.key)=\(.value)"'
+$ dotenv | jq 'to_entries | map(select(.key | startswith("DB_")))[] | "\(.key)=\(.value)"'
 "DB_HOST=localhost"
 "DB_USER=root"
 "DB_PASS=password"

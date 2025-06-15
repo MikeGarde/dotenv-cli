@@ -44,7 +44,7 @@ async function app() {
     throw new RuleViolationError(`Error reading from stdin: ${err}`);
   });
 
-  const envFilePath: string = cliOptions.file || '.env';
+  const envFilePath: string = cliOptions.file || process.env.DOTENV_FILE || '.env';
   const fullEnvPath: string = path.resolve(envFilePath);
   const keys: string[]      = program.args;
   const set: string         = cliOptions.set;
@@ -65,7 +65,7 @@ async function app() {
 
   // Must have a .env file
   if (!fs.existsSync(fullEnvPath)) {
-    throw new RuleViolationError(`.env file not found: ${fullEnvPath}`);
+    throw new RuleViolationError(`File not found: ${fullEnvPath}`);
   }
 
   let options: Options = {
