@@ -19,8 +19,14 @@ describe('app.ts', () => {
       const errorMsg: string  = buffer.toString('utf8');
 
       expect(parsedError.status).toEqual(1);
-      expect(errorMsg).toContain('.env file not found');
+      expect(errorMsg).toContain('File not found');
     }
+  });
+
+  test('uses DOTENV_FILE environment variable', () => {
+    const result = execSync(`export DOTENV_FILE=${envPath} && node ${appPath} NAME`);
+    expect(result.toString().trim()).toBe('dotenv-cli');
+    delete process.env.DOTENV_FILE;
   });
 
   test('read simple value', () => {
