@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+
+import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageRoot = join(__dirname, '..');
+
+const binaryName = process.platform === 'win32' ? 'dotenv.exe' : 'dotenv';
+const binaryPath = join(packageRoot, 'vendor', binaryName);
+
+if (!existsSync(binaryPath)) {
+  console.error(
+    'dotenv binary was not found. Try reinstalling @mikegarde/dotenv-cli.'
+  );
+  process.exit(1);
+}
+
+const result = spawnSync(binaryPath, process.argv.slice(2), {
+  stdio: 'inherit',
+  env: process.env,
+});
+
+if (result.error) {
+  console.error(result.error.message);
+  process.exit(1);
+}
+
+process.exit(result.status ?? 1);

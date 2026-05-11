@@ -6,42 +6,77 @@ tasks:
     cmds:
       - task --list --sort alphanumeric
 
-  test:
-    desc: Run tests
-    deps:
-      - build
+  setup:
+    desc: "Setup development environment"
+    silent: true
+    status:
+      - rustup target list --installed | grep -q x86_64-apple-darwin
+      - rustup target list --installed | grep -q aarch64-apple-darwin
+      - rustup target list --installed | grep -q x86_64-unknown-linux-gnu
+      - rustup target list --installed | grep -q aarch64-unknown-linux-gnu
+      - rustup target list --installed | grep -q x86_64-unknown-linux-musl
+      - rustup target list --installed | grep -q aarch64-unknown-linux-musl
+      - rustup target list --installed | grep -q x86_64-pc-windows-msvc
+      - rustup target list --installed | grep -q aarch64-pc-windows-msvc
     cmds:
-      - npm run test
+      - rustup target add x86_64-apple-darwin
+      - rustup target add aarch64-apple-darwin
+      - rustup target add x86_64-unknown-linux-gnu
+      - rustup target add aarch64-unknown-linux-gnu
+      - rustup target add x86_64-unknown-linux-musl
+      - rustup target add aarch64-unknown-linux-musl
+      - rustup target add x86_64-pc-windows-msvc
+      - rustup target add aarch64-pc-windows-msvc
+
+  test:
+    desc: "Run all tests"
+    cmds:
+      - cargo clippy --all-targets --all-features -- -D warnings
+      - cargo test --all-features
 
   build:
-    desc: Compile TypeScript to JavaScript
+    desc: Build the project in release mode
     cmds:
-      - npx tsc
-    sources:
-      - src/**/*.ts
-    generates:
-      - build/**/*.js
-  build:watch:
-    desc: Compile TypeScript to JavaScript and watch for changes
-    cmds:
-      - npx tsc -w
-    sources:
-      - src/**/*.ts
-    generates:
-      - build/**/*.js
-  build:clean:
-    desc: Remove build directory
-    cmds:
-      - rm -rf build
-      - git checkout -- build
+      - task: build:release
 
-  dev-install:
+  build:*:
+    desc: Build the Rust binary with the requested Cargo profile
+    vars:
+      TARGET: '{{index .MATCH 0}}'
+    cmds:
+      - cargo build --profile {{.TARGET}}
+
+  install:
+    desc: "Install binary locally via cargo install --path ."
+    cmds:
+      - task: uninstall
+      - cargo install --path .
+  install:brew:
+    desc: Install via Homebrew tap
+    cmds:
+      - task: uninstall
+      - brew install mikegarde/tap/dotenv-cli
+  install:npm:
     desc: Local development setup
     cmds:
-      - npm uninstall -g @mikegarde/dotenv-cli || true
+      - task: uninstall
       - npm install
-      - task build
-      - sudo npm install -g
+      - task: build:release
+      - npm install -g
+  install:npm:repo:
+    desc: Local development setup
+    cmds:
+      - task: uninstall
+      - npm install -g @mikegarde/dotenv-cli
+  uninstall:
+    desc: "Uninstall all local installations of dotenv-cli (cargo, npm, brew)"
+    internal: true
+    cmds:
+      - cargo uninstall dotenv-cli || true
+      - cargo uninstall --path . || true
+      - brew uninstall mikegarde/tap/dotenv-cli || true
+      - npm uninstall -g @mikegarde/dotenv-cli || true
+      - npm uninstall -g || true
 
   is-branch-safe:
     desc: Check if the current branch is main
@@ -63,54 +98,37 @@ tasks:
         msg: "Not on main or develop branch"
     vars:
       STEP: '{{index .MATCH 0}}'
-      BRANCH:
-        sh: git rev-parse --abbrev-ref HEAD
-      PRERELEASE:
-        sh: |
-          if [ "{{.BRANCH}}" = "develop" ]; then
-            echo "--prerelease"
-          fi
     cmds:
-      - |
-        task build:clean
-        task test
-
-        VERSION=$(gh release list --json tagName | jq -r '.[] | .tagName' | sort -V | tail -n 1)
-        MAJOR=$(echo $VERSION | cut -d. -f1)
-        MINOR=$(echo $VERSION | cut -d. -f2)
-        PATCH=$(echo $VERSION | cut -d. -f3)
-
-        echo "Current version: $VERSION"
-        if [ "{{.STEP}}" = "major" ]; then
-          MAJOR=$((MAJOR+1))
-          MINOR=0
-          PATCH=0
-        elif [ "{{.STEP}}" = "minor" ]; then
-          MINOR=$((MINOR+1))
-          PATCH=0
-        elif [ "{{.STEP}}" = "patch" ]; then
-          PATCH=$((PATCH+1))
-        else
-          echo "Invalid step: $STEP"
-          exit 1
-        fi
-        VERSION="$MAJOR.$MINOR.$PATCH"
-        echo "New version: $VERSION"
-
-        npm version $VERSION
-        git push
-        task build
-        zip -r build.zip build
-        gh release create "$VERSION" --generate-notes --target {{.BRANCH}} {{.PRERELEASE}} build.zip
-        rm build.zip
+      - devops/release/1-bump-version.sh {{.STEP}}
+      - task test
+      - devops/release/2-tag-version.sh
+      - task release:assets
+      - devops/release/4-generate-release-notes.sh
+      - devops/release/5-create-github-release.sh
   publish:
-    desc: publish a release to npm
+    desc: Publish a release to npmjs and GitHub Packages
     preconditions:
       - task is-branch-safe
     cmds:
-      - npm publish --access public --registry https://registry.npmjs.org
+      - task: publish:npm
+      - task: publish:github
+
+  publish:npm:
+    desc: Publish a release to npmjs
+    preconditions:
+      - task is-branch-safe
+    cmds:
+      - npm run publish:npm
+
+  publish:github:
+    desc: Publish a release to GitHub Packages
+    preconditions:
+      - task is-branch-safe
+    cmds:
+      - npm run publish:github
+
   release:publish:*:
-    desc: Create a new release and publish it to npm, release-[patch|minor|major]-pub
+    desc: Create a new release and publish it to npmjs and GitHub Packages
     vars:
       STEP: '{{index .MATCH 0}}'
     cmds:

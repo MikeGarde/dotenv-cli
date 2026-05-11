@@ -16,7 +16,7 @@ Find it on
 npm i -g @mikegarde/dotenv-cli
 ```
 
-## CLI Usage
+## Usage
 
 Get a value from a .env file:
 
@@ -28,38 +28,6 @@ Get a value from a .env.example file:
 
 ```shell
 dotenv <key> --file .env.example
-```
-
-### JSON
-
-By default multiple keys are returned as a JSON object. To return a single key as a JSON object, use the `--json` flag.
-To not return a JSON object, use the `--no-json` flag.
-
-Return a .env file as JSON:
-
-```shell
-dotenv
-```
-
-Wildcard search:
-
-```shell
-dotenv "DB_*"
-```
-
-### Multiline Values
-
-The default behavior is to output a single line value. If you want to output a multiline value, 
-you can use the `--multiline` flag:
-
-```shell
-$ dotenv RSA_KEY
------BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKj34GkxFhD90vcNLYLInFEX6Ppy1tPf...
-
-$ dotenv RSA_KEY --multiline
------BEGIN RSA PRIVATE KEY-----
-MIIBOgIBAAJBAKj34GkxFhD90vcNLYLInFEX6Ppy1tPf9Cnzj4p4WGeKLs1Pt8Qu
-KUpRKfFLfRYC9AIKjbJTWit+CqvjWYzvQwECAwEAAQJAIJLixBy2qpFoS4DSmoEm
 ```
 
 ### Setting a Value
@@ -83,19 +51,6 @@ Delete a value from a .env file:
 ```shell
 dotenv <key> --delete
 ```
-
-### Using DOTENV_FILE Environment Variable
-
-You can define the `DOTENV_FILE` environment variable in your shell or script to specify the `.env` file to use, instead 
-of passing the `--file` option every time.
-
-```shell
-export DOTENV_FILE=.env.example
-dotenv <key>
-```
-
-This will use the `.env.example` file automatically. If the `--file` option is provided, it will override the 
-`DOTENV_FILE` environment variable.
 
 ## Examples
 
@@ -139,3 +94,50 @@ $ dotenv | jq 'to_entries | map(select(.key | startswith("DB_")))[] | "\(.key)=\
 "DB_USER=root"
 "DB_PASS=password"
 ```
+
+## Other Stuff
+
+### JSON
+
+By default multiple keys are returned as a JSON object. To return a single key as a JSON object, use the `--json` flag.
+To not return a JSON object, use the `--no-json` flag.
+
+Return a .env file as JSON:
+
+```shell
+dotenv
+```
+
+Wildcard search:
+
+```shell
+dotenv "DB_*"
+```
+
+### Multiline Values
+
+The default behavior is to output a single line value. If you want to output a multiline value,
+you can use the `--multiline` flag:
+
+```shell
+$ dotenv RSA_KEY
+-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKj34GkxFhD90vcNLYLInFEX6Ppy1tPf...
+
+$ dotenv RSA_KEY --multiline
+-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAKj34GkxFhD90vcNLYLInFEX6Ppy1tPf9Cnzj4p4WGeKLs1Pt8Qu
+KUpRKfFLfRYC9AIKjbJTWit+CqvjWYzvQwECAwEAAQJAIJLixBy2qpFoS4DSmoEm
+```
+
+### Using DOTENV_FILE Environment Variable
+
+You can define the `DOTENV_FILE` environment variable in your shell or script to specify the `.env` file to use, instead
+of passing the `--file` option every time.
+
+```shell
+export DOTENV_FILE=.env.example
+dotenv <key>
+```
+
+This will use the `.env.example` file automatically. If the `--file` option is provided, it will override the
+`DOTENV_FILE` environment variable.
