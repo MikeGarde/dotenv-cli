@@ -1,19 +1,29 @@
 # dotenv-cli
-[![NPM Version](https://img.shields.io/npm/v/%40mikegarde%2Fdotenv-cli)](https://www.npmjs.com/package/@mikegarde/dotenv-cli)
-[![NPM Unpacked Size](https://img.shields.io/npm/unpacked-size/%40mikegarde%2Fdotenv-cli)](https://www.npmjs.com/package/@mikegarde/dotenv-cli)
-[![NPM Downloads](https://img.shields.io/npm/dy/%40mikegarde%2Fdotenv-cli)](https://www.npmjs.com/package/@mikegarde/dotenv-cli)
+[![Version](https://img.shields.io/github/v/release/mikegarde/dotenv-cli)](https://github.com/MikeGarde/dotenv-cli)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mikegarde/dotenv-cli/node.tests.yml)](https://github.com/MikeGarde/dotenv-cli/actions)
+[![Codecov](https://img.shields.io/codecov/c/github/mikegarde/dotenv-cli)](https://app.codecov.io/gh/MikeGarde/dotenv-cli)
+[![NPM Downloads](https://img.shields.io/npm/dy/%40mikegarde%2Fdotenv-cli?logo=npm&color=blue)](https://www.npmjs.com/package/@mikegarde/dotenv-cli)
+[![Crates.io Downloads](https://img.shields.io/crates/d/dotenv-cli?logo=crates&color=blue)](https://crates.io/crates/dotenv-cli)
+[![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/mikegarde/dotenv-cli/total?logo=github&color=blue)](https://github.com/MikeGarde/dotenv-cli/releases)
 
 A simple way to retrieve, update, or delete .env variables directly from the command line.
 
 ## Install
 
 Find it on
-[npm](https://www.npmjs.com/package/@mikegarde/dotenv-cli) or
-[GitHub](https://github.com/MikeGarde/dotenv-cli)
+[GitHub](https://github.com/MikeGarde/dotenv-cli),
+[crates.io](https://crates.io/crates/dotenv-cli), or
+[npm](https://www.npmjs.com/package/@mikegarde/dotenv-cli),
 
-```shell
+```bash
+# Using Homebrew (macOS/Linux)
+brew install mikegarde/tap/dotenv-cli
+
+# Using npm (Node.js)
 npm i -g @mikegarde/dotenv-cli
+
+# Using Cargo (Rust)
+cargo install dotenv-cli
 ```
 
 ## Usage
