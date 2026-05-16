@@ -1,0 +1,184 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Release version/tag to create or complete. Defaults to package.json version.
+        required: false
+        type: string
+      release_draft:
+        description: Create a draft release when this workflow creates the release.
+        required: true
+        default: true
+        type: boolean
+      release_prerelease:
+        description: Mark the release as a prerelease when this workflow creates the release.
+        required: true
+        default: false
+        type: boolean
+      clobber_assets:
+        description: Replace existing release assets with the same name.
+        required: true
+        default: false
+        type: boolean
+  release:
+    types: [created, published]
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.release_version || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build-assets:
+    name: Build ${{ matrix.target }}
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && github.event.action == 'created')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+            platform: unknown-linux-gnu
+            arch: x86_64
+            executable: dotenv
+            apt: ''
+          - target: x86_64-unknown-linux-musl
+            archive: tar.gz
+            platform: unknown-linux-musl
+            arch: x86_64
+            executable: dotenv
+            apt: ''
+          - target: x86_64-pc-windows-gnu
+            archive: zip
+            platform: pc-windows-gnu
+            arch: x86_64
+            executable: dotenv.exe
+            apt: gcc-mingw-w64-x86-64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Install system dependencies
+        if: matrix.apt != ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.apt }}
+
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package asset
+        env:
+          RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.release_version }}
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+          EXECUTABLE: ${{ matrix.executable }}
+          ARCHIVE: ${{ matrix.archive }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+
+          version="${RELEASE_VERSION:-$(node -p "require('./package.json').version")}"
+          mkdir -p dist/release
+
+          asset_name="dotenv-cli-${version}-${PLATFORM}-${ARCH}.${ARCHIVE}"
+          binary_dir="target/${TARGET}/release"
+
+          if [ "$ARCHIVE" = "zip" ]; then
+            (cd "$binary_dir" && zip "$GITHUB_WORKSPACE/dist/release/$asset_name" "$EXECUTABLE")
+          else
+            tar -czf "dist/release/$asset_name" -C "$binary_dir" "$EXECUTABLE"
+          fi
+
+      - name: Upload packaged asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-asset-${{ matrix.target }}
+          path: dist/release/*
+          if-no-files-found: error
+
+  create-or-complete-release:
+    name: Create or complete release
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && github.event.action == 'created')
+    needs: build-assets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-asset-*
+          path: dist/release
+          merge-multiple: true
+
+      - name: Generate release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.release_version }}
+          RELEASE_TARGET: ${{ github.sha }}
+        run: devops/release/4-generate-release-notes.sh
+
+      - name: Create or complete release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.release_version }}
+          RELEASE_TARGET: ${{ github.sha }}
+          RELEASE_DRAFT: ${{ inputs.release_draft }}
+          PRERELEASE: ${{ inputs.release_prerelease }}
+          RELEASE_CLOBBER_ASSETS: ${{ inputs.clobber_assets }}
+        run: devops/release/5-create-github-release.sh
+
+  publish:
+    name: Publish packages
+    if: github.event_name == 'release' && github.event.action == 'published' && github.event.release.draft == false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Node for npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install package dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Publish to npm
+        run: npm run publish:npm
+
+      - name: Set up Node for GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+
+      - name: Publish to GitHub Packages
+        run: npm run publish:github
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

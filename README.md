@@ -1,6 +1,6 @@
 # dotenv-cli
 [![Version](https://img.shields.io/github/v/release/mikegarde/dotenv-cli)](https://github.com/MikeGarde/dotenv-cli)
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mikegarde/dotenv-cli/node.tests.yml)](https://github.com/MikeGarde/dotenv-cli/actions)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mikegarde/dotenv-cli/test.rust.yml)](https://github.com/MikeGarde/dotenv-cli/actions)
 [![Codecov](https://img.shields.io/codecov/c/github/mikegarde/dotenv-cli)](https://app.codecov.io/gh/MikeGarde/dotenv-cli)
 [![NPM Downloads](https://img.shields.io/npm/dy/%40mikegarde%2Fdotenv-cli?logo=npm&color=blue)](https://www.npmjs.com/package/@mikegarde/dotenv-cli)
 [![Crates.io Downloads](https://img.shields.io/crates/d/dotenv-cli?logo=crates&color=blue)](https://crates.io/crates/dotenv-cli)

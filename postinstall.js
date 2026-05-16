@@ -40,7 +40,7 @@ function getAssetName() {
 }
 
 function getDownloadUrl() {
-  return `https://github.com/${repo}/releases/download/v${version}/${getAssetName()}`;
+  return `https://github.com/${repo}/releases/download/${version}/${getAssetName()}`;
 }
 
 function getVendorDir() {
