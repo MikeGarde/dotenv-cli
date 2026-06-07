@@ -161,7 +161,7 @@ jobs:
           ref: ${{ github.event.release.tag_name }}
 
       - name: Set up Node for npm
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
@@ -173,9 +173,9 @@ jobs:
         run: npm run publish:npm
 
       - name: Set up Node for GitHub Packages
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://npm.pkg.github.com
 
       - name: Publish to GitHub Packages
