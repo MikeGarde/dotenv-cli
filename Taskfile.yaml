@@ -78,8 +78,8 @@ tasks:
           exit 1
         fi
 
-  release-*:
-    desc: Create a new release, task release-[patch|minor|major]
+  release:*:
+    desc: "Bump version, build & upload macOS assets, then dispatch GitHub Actions for Linux/Windows & Homebrew tap update. Usage: task release:[patch|minor|major|X.Y.Z]"
     silent: true
     preconditions:
       - sh: task is-branch-safe
@@ -90,9 +90,13 @@ tasks:
       - devops/release/1-bump-version.sh {{.STEP}}
       - task test
       - devops/release/2-tag-version.sh
-      - devops/release/3-build-release-assets.sh --macos
-      - devops/release/4-generate-release-notes.sh
-      - devops/release/5-create-github-release.sh
+      - devops/release/release.sh --macos
+
+  release:finalize:
+    desc: Publish the draft release if all expected assets have been uploaded
+    cmds:
+      - devops/release/finalize-release.sh
+
   publish:
     desc: Publish a release to npmjs and GitHub Packages
     preconditions:
@@ -114,11 +118,3 @@ tasks:
       - task is-branch-safe
     cmds:
       - npm run publish:github
-
-  release:publish:*:
-    desc: Create a new release and publish it to npmjs and GitHub Packages
-    vars:
-      STEP: '{{index .MATCH 0}}'
-    cmds:
-      - task: release-{{.STEP}}
-      - task: publish

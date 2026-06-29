@@ -22,7 +22,7 @@ function getPlatform() {
   switch (process.platform) {
     case 'darwin': return 'apple-darwin';
     case 'linux': return 'unknown-linux-gnu';
-    case 'win32': return 'pc-windows-msvc';
+    case 'win32': return 'pc-windows-gnu';
     default: throw new Error(`Unsupported platform: ${process.platform}`);
   }
 }
