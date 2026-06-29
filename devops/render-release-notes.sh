@@ -26,18 +26,29 @@ brew install mikegarde/tap/dotenv-cli
 npm install -g @mikegarde/dotenv-cli
 \`\`\`
 
+## Install on RHEL
+
+\`\`\`bash
+# x86
+curl -fsSL "https://github.com/MikeGarde/dotenv-cli/releases/download/${VERSION}/commitbot-${VERSION}-unknown-linux-musl-x86_64.tar.gz" | sudo tar -xz --no-same-owner -C /usr/local/bin dotenv
+
+# arm
+curl -fsSL "https://github.com/MikeGarde/dotenv-cli/releases/download/${VERSION}/commitbot-${VERSION}-unknown-linux-musl-aarch64.tar.gz" | sudo tar -xz --no-same-owner -C /usr/local/bin dotenv
+\`\`\`
+
+
 ## Downloads
 
 | OS | arm64 | x86_64 |
 | --- | --- | --- |
 | macOS | [Download]($(asset_url "dotenv-cli-${VERSION}-apple-darwin-aarch64.tar.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-apple-darwin-x86_64.tar.gz")) |
-| Ubuntu* | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-gnu-aarch64.tar.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-gnu-x86_64.tar.gz")) |
-| RHEL** | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-musl-aarch64.tar.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-musl-x86_64.tar.gz")) |
-| Windows*** | — | [Download]($(asset_url "dotenv-cli-${VERSION}-pc-windows-gnu-x86_64.tar.gz")) |
+| Ubuntu | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-gnu-aarch64.tar.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-gnu-x86_64.tar.gz")) |
+| RHEL | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-musl-aarch64.tar.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-musl-x86_64.tar.gz")) |
+| Windows | — | [Download]($(asset_url "dotenv-cli-${VERSION}-pc-windows-gnu-x86_64.tar.gz")) |
 
-\* Ubuntu and compatible distributions like Debian, Mint, etc. that use glibc.
-\** RHEL and compatible distributions like Amazon, Rocky, etc. that use musl instead of glibc.
-\*** Windows x86_64 only; built with the GNU toolchain (mingw-w64).
+- Ubuntu and compatible distributions like Debian, Mint, etc. that use glibc.
+- RHEL and compatible distributions like Amazon, Rocky, etc. that use musl instead of glibc.
+- Windows x86_64 only; built with the GNU toolchain (mingw-w64).
 
 EOF
 

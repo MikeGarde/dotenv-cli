@@ -66,18 +66,32 @@ async function downloadAndExtract(url, destDir, binName) {
   console.log(`Installed dotenv binary to ${path.join(destDir, binName)}`);
 }
 
-function download(url, tmpFile) {
+function download(url, tmpFile, redirectCount = 0) {
   return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(tmpFile);
+    if (redirectCount > 5) {
+      reject(new Error(`Too many redirects while downloading: ${url}`));
+      return;
+    }
 
     https.get(url, (response) => {
-      if (response.statusCode !== 200) {
-        reject(new Error(`Failed to download: ${url}`));
+      const { statusCode, headers } = response;
+
+      if (statusCode >= 300 && statusCode < 400 && headers.location) {
+        response.resume(); // discard the redirect body
+        const nextUrl = new URL(headers.location, url).toString();
+        resolve(download(nextUrl, tmpFile, redirectCount + 1));
         return;
       }
 
+      if (statusCode !== 200) {
+        reject(new Error(`Failed to download (${statusCode}): ${url}`));
+        return;
+      }
+
+      const file = fs.createWriteStream(tmpFile);
       response.pipe(file);
       file.on('finish', () => file.close(resolve));
+      file.on('error', reject);
     }).on('error', reject);
   });
 }

@@ -21,6 +21,7 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -166,9 +167,9 @@ jobs:
 
       - name: Publish to npm
         if: steps.publish.outputs.published == 'true'
-        run: npm run publish:npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm install -g npm@latest
+          npm run publish:npm
 
       - name: Set up Node for GitHub Packages
         if: steps.publish.outputs.published == 'true'
