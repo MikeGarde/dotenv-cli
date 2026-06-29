@@ -2,7 +2,7 @@
 
 ## Install
 
-### MacOS (brew)
+### Brew
 
 ```bash
 brew install mikegarde/tap/dotenv-cli
@@ -16,7 +16,7 @@ npm i -g @mikegarde/dotenv-cli
 
 ## Download
 
-Download the appropriate archive for your platform, extract it, and place the `dotenv` binary somewhere in your system `PATH`.
+Download the appropriate archive for your platform, extract it, and place the `dotenv` binary in your system `PATH`.
 
 | OS | Intel | Arm |
 | --- | --- | --- |
