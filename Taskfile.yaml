@@ -87,12 +87,17 @@ tasks:
       - task: build:release
       - npm install -g
 
+  install:npm:repo:
+    desc: "Install the published package from the npm registry"
+    cmds:
+      - task: uninstall
+      - npm install -g @mikegarde/dotenv-cli
+
   uninstall:
     desc: "Uninstall all local installations of dotenv-cli (cargo, npm, brew)"
     internal: true
     cmds:
       - cargo uninstall dotenv-cli || true
-      - cargo uninstall --path . || true
       - brew uninstall mikegarde/tap/dotenv-cli || true
       - npm uninstall -g @mikegarde/dotenv-cli || true
 
