@@ -7,7 +7,7 @@ tasks:
       - task --list --sort alphanumeric
 
   setup:
-    desc: "Setup development environment"
+    desc: "Add the macOS Rust targets used for local release builds"
     silent: true
     status:
       - rustup target list --installed | grep -q x86_64-apple-darwin
@@ -23,39 +23,70 @@ tasks:
       - cargo test --all-features
 
   build:
-    desc: Build the project in release mode
+    desc: "Build debug binary for the host"
+    silent: true
     cmds:
-      - task: build:release
+      - cargo build
+      - du -h target/debug/dotenv
 
-  build:*:
-    desc: Build the Rust binary with the requested Cargo profile
-    vars:
-      TARGET: '{{index .MATCH 0}}'
+  build:release:
+    desc: "Build optimized release binary for the host"
+    silent: true
     cmds:
-      - cargo build --profile {{.TARGET}}
+      - cargo build --release
+      - du -h target/release/dotenv
+
+  build:release:*:
+    desc: "Build macOS release binaries for all targets and package into dist/"
+    vars:
+      VERSION: '{{index .MATCH 0}}'
+    silent: true
+    cmds:
+      - mkdir -p dist
+      - rm -f dist/dotenv-cli-*.tar.gz
+      - |
+        set -euo pipefail
+
+        echo "Building macOS release binaries..."
+        cargo build --release --target aarch64-apple-darwin
+        cargo build --release --target x86_64-apple-darwin
+
+        du -h target/aarch64-apple-darwin/release/dotenv
+        du -h target/x86_64-apple-darwin/release/dotenv
+
+        echo "Packaging into dist with version {{.VERSION}}..."
+
+        tar -C target/aarch64-apple-darwin/release \
+          -czf dist/dotenv-cli-{{.VERSION}}-apple-darwin-aarch64.tar.gz \
+          dotenv
+
+        tar -C target/x86_64-apple-darwin/release \
+          -czf dist/dotenv-cli-{{.VERSION}}-apple-darwin-x86_64.tar.gz \
+          dotenv
+
+        echo "Artifacts created:"
+        ls -lh dist
 
   install:
     desc: "Install binary locally via cargo install --path ."
     cmds:
       - task: uninstall
       - cargo install --path .
+
   install:brew:
-    desc: Install via Homebrew tap
+    desc: "Install via Homebrew tap"
     cmds:
       - task: uninstall
       - brew install mikegarde/tap/dotenv-cli
+
   install:npm:
-    desc: Local development setup
+    desc: "Local development install via npm"
     cmds:
       - task: uninstall
       - npm install
       - task: build:release
       - npm install -g
-  install:npm:repo:
-    desc: Local development setup
-    cmds:
-      - task: uninstall
-      - npm install -g @mikegarde/dotenv-cli@0.6.1
+
   uninstall:
     desc: "Uninstall all local installations of dotenv-cli (cargo, npm, brew)"
     internal: true
@@ -64,57 +95,22 @@ tasks:
       - cargo uninstall --path . || true
       - brew uninstall mikegarde/tap/dotenv-cli || true
       - npm uninstall -g @mikegarde/dotenv-cli || true
-      - npm uninstall -g || true
-
-  is-branch-safe:
-    desc: Check if the current branch is main
-    vars:
-      BRANCH:
-        sh: git rev-parse --abbrev-ref HEAD
-    cmds:
-      - |
-        if [ "{{.BRANCH}}" != "main" ] && [ "{{.BRANCH}}" != "develop" ]; then
-          echo "Not on main or develop branch"
-          exit 1
-        fi
 
   release:*:
-    desc: "Bump version, build & upload macOS assets, then dispatch GitHub Actions for Linux/Windows & Homebrew tap update. Usage: task release:[patch|minor|major|X.Y.Z]"
-    silent: true
-    preconditions:
-      - sh: task is-branch-safe
-        msg: "Not on main or develop branch"
+    desc: "Create a release: bump version, build & upload macOS assets, then GitHub Actions builds Linux/Windows, publishes, and updates the Homebrew tap. Usage: task release:[patch|minor|major|X.Y.Z]"
+    interactive: true
     vars:
-      STEP: '{{index .MATCH 0}}'
+      VERSION: '{{index .MATCH 0}}'
     cmds:
-      - devops/release/1-bump-version.sh {{.STEP}}
-      - task test
-      - devops/release/2-tag-version.sh
-      - devops/release/release.sh --macos
-
-  release:finalize:
-    desc: Publish the draft release if all expected assets have been uploaded
-    cmds:
-      - devops/release/finalize-release.sh
-
-  publish:
-    desc: Publish a release to npmjs and GitHub Packages
-    preconditions:
-      - task is-branch-safe
-    cmds:
-      - task: publish:npm
-      - task: publish:github
+      - task: test
+      - bash devops/release.sh {{.VERSION}}
 
   publish:npm:
-    desc: Publish a release to npmjs
-    preconditions:
-      - task is-branch-safe
+    desc: "Manually publish the current version to npmjs (normally handled by GitHub Actions)"
     cmds:
       - npm run publish:npm
 
   publish:github:
-    desc: Publish a release to GitHub Packages
-    preconditions:
-      - task is-branch-safe
+    desc: "Manually publish the current version to GitHub Packages (normally handled by GitHub Actions)"
     cmds:
       - npm run publish:github

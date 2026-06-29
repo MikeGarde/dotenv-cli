@@ -22,10 +22,6 @@ permissions:
   contents: write
   packages: write
 
-concurrency:
-  group: release-assets-${{ inputs.tag }}
-  cancel-in-progress: false
-
 env:
   CARGO_TERM_COLOR: always
 
@@ -51,14 +47,14 @@ jobs:
             binary_name: dotenv
             install_cmd: ""
             linker: ""
-          - name: Linux static (musl) arm64
+          - name: Amazon Linux / CentOS / RHEL arm64
             runner: ubuntu-24.04-arm
             target: aarch64-unknown-linux-musl
             asset_target: unknown-linux-musl-aarch64
             binary_name: dotenv
             install_cmd: sudo apt-get update && sudo apt-get install -y musl-tools
             linker: musl-gcc
-          - name: Linux static (musl) x86_64
+          - name: Amazon Linux / CentOS / RHEL x86_64
             runner: ubuntu-24.04
             target: x86_64-unknown-linux-musl
             asset_target: unknown-linux-musl-x86_64
@@ -88,7 +84,7 @@ jobs:
           fi
 
       - name: Check out tagged source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.meta.outputs.tag }}
 
@@ -144,46 +140,45 @@ jobs:
     needs: build-release-assets
     runs-on: ubuntu-24.04
     steps:
-      - name: Check out release tag
-        uses: actions/checkout@v4
+      - name: Check out source
+        uses: actions/checkout@v7
         with:
-          fetch-depth: 0
           ref: ${{ inputs.tag }}
 
       - name: Publish release and trigger Homebrew tap update
-        id: finalize
+        id: publish
         env:
           GH_TOKEN: ${{ github.token }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          RELEASE_VERSION: ${{ inputs.tag }}
-        run: devops/release/finalize-release.sh
+        shell: bash
+        run: bash devops/publish-if-complete.sh "${{ inputs.tag }}"
 
       - name: Set up Node for npm
-        if: steps.finalize.outputs.published == 'true'
+        if: steps.publish.outputs.published == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
       - name: Install package dependencies
-        if: steps.finalize.outputs.published == 'true'
+        if: steps.publish.outputs.published == 'true'
         run: npm ci --ignore-scripts
 
       - name: Publish to npm
-        if: steps.finalize.outputs.published == 'true'
+        if: steps.publish.outputs.published == 'true'
         run: npm run publish:npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Set up Node for GitHub Packages
-        if: steps.finalize.outputs.published == 'true'
+        if: steps.publish.outputs.published == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: https://npm.pkg.github.com
 
       - name: Publish to GitHub Packages
-        if: steps.finalize.outputs.published == 'true'
+        if: steps.publish.outputs.published == 'true'
         run: npm run publish:github
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

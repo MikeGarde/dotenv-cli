@@ -1,0 +1,221 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: Release branch
+        required: true
+        type: choice
+        options:
+          - develop
+          - main
+      version:
+        description: Release version (X.Y.Z)
+        required: true
+        type: string
+
+permissions:
+  actions: write
+  contents: write
+
+concurrency:
+  group: release-${{ inputs.target_branch }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      previous_version: ${{ steps.plan.outputs.previous_version }}
+      version: ${{ steps.plan.outputs.version }}
+      target_branch: ${{ steps.plan.outputs.target_branch }}
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Fetch tags
+        run: git fetch --force --tags
+
+      - name: Plan release
+        id: plan
+        env:
+          TARGET_BRANCH: ${{ inputs.target_branch }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: devops/ga-release-plan.sh
+
+  prepare_release:
+    needs: plan
+    runs-on: ubuntu-latest
+    outputs:
+      release_sha: ${{ steps.release_commit.outputs.release_sha }}
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Fetch tags
+        run: git fetch --force --tags
+
+      - name: Verify tag does not already exist
+        shell: bash
+        run: |
+          if git rev-parse "refs/tags/${{ needs.plan.outputs.version }}" >/dev/null 2>&1; then
+            echo "Tag ${{ needs.plan.outputs.version }} already exists."
+            exit 1
+          fi
+
+      - name: Configure git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release commit
+        id: release_commit
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${{ needs.plan.outputs.version }}"
+
+          perl -pi -e 's/^version = "[0-9]+\.[0-9]+\.[0-9]+"/version = "'"$version"'"/' Cargo.toml
+          perl -0pi -e 's/name = "dotenv-cli"\nversion = "[0-9]+\.[0-9]+\.[0-9]+"/name = "dotenv-cli"\nversion = "'"$version"'"/m' Cargo.lock
+          npm version "$version" --no-git-tag-version --allow-same-version >/dev/null
+
+          if git diff --quiet -- Cargo.toml Cargo.lock package.json package-lock.json; then
+            echo "Release version ${version} is already present in the package metadata." >&2
+            exit 1
+          fi
+
+          git add Cargo.toml Cargo.lock package.json package-lock.json
+          git commit -m "Release ${version}"
+          git tag "${version}"
+
+          echo "release_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Push release commit and tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin "HEAD:${{ needs.plan.outputs.target_branch }}"
+          git push origin "refs/tags/${{ needs.plan.outputs.version }}"
+
+  create_release:
+    needs: [plan, prepare_release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare_release.outputs.release_sha }}
+
+      - name: Generate release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          NOTES_ARGS=()
+          if [[ -n "${{ needs.plan.outputs.previous_version }}" ]]; then
+            NOTES_ARGS+=(-f previous_tag_name="${{ needs.plan.outputs.previous_version }}")
+          fi
+
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${{ github.repository }}/releases/generate-notes" \
+            -f tag_name="${{ needs.plan.outputs.version }}" \
+            -f target_commitish="${{ needs.prepare_release.outputs.release_sha }}" \
+            "${NOTES_ARGS[@]}" \
+            --jq .body > generated-release-notes.md
+
+          bash devops/render-release-notes.sh \
+            "${{ needs.plan.outputs.version }}" \
+            "${{ github.repository }}" \
+            generated-release-notes.md > release-notes.md
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PRERELEASE_ARGS=()
+          if [[ "${{ needs.plan.outputs.target_branch }}" == "develop" ]]; then
+            PRERELEASE_ARGS+=(--prerelease)
+          fi
+
+          gh release create "${{ needs.plan.outputs.version }}" \
+            --draft \
+            --verify-tag \
+            "${PRERELEASE_ARGS[@]}" \
+            --target "${{ needs.prepare_release.outputs.release_sha }}" \
+            --title "${{ needs.plan.outputs.version }}" \
+            --notes-file release-notes.md
+
+      - name: Dispatch release-assets workflow
+        id: dispatch_assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dispatch_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          source_run_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          gh workflow run release-assets.yml \
+            --ref "${{ needs.plan.outputs.target_branch }}" \
+            -f tag="${{ needs.plan.outputs.version }}" \
+            -f source_run_id="${{ github.run_id }}" \
+            -f source_run_url="${source_run_url}"
+
+          assets_run_url=""
+          for _ in {1..12}; do
+            sleep 5
+
+            assets_run_url="$(
+              gh api "/repos/${{ github.repository }}/actions/workflows/release-assets.yml/runs?event=workflow_dispatch&branch=${{ needs.plan.outputs.target_branch }}&per_page=20" \
+                --jq '.workflow_runs
+                  | map(select(.head_sha == "${{ needs.prepare_release.outputs.release_sha }}" and .status != null))
+                  | sort_by(.created_at)
+                  | reverse
+                  | .[0].html_url // ""'
+            )"
+
+            if [[ -n "${assets_run_url}" ]]; then
+              break
+            fi
+          done
+
+          echo "dispatch_started_at=${dispatch_started_at}" >> "$GITHUB_OUTPUT"
+          echo "assets_run_url=${assets_run_url}" >> "$GITHUB_OUTPUT"
+
+      - name: Add release summary
+        shell: bash
+        run: |
+          release_url="https://github.com/${{ github.repository }}/releases/tag/${{ needs.plan.outputs.version }}"
+          assets_url="${{ steps.dispatch_assets.outputs.assets_run_url }}"
+
+          {
+            echo "## Release"
+            echo
+            echo "- Version: \`${{ needs.plan.outputs.version }}\`"
+            echo "- Release: [${{ needs.plan.outputs.version }}](${release_url})"
+            echo "- macOS assets are built and uploaded locally via \`task release:${{ needs.plan.outputs.version }}\` (join mode)."
+            if [[ -n "${assets_url}" ]]; then
+              echo "- Release assets workflow: [Open run](${assets_url})"
+            else
+              echo "- Release assets workflow: dispatched, but the run URL was not discovered yet."
+              echo "- Release assets workflow page: [Open workflow](https://github.com/${{ github.repository }}/actions/workflows/release-assets.yml)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
