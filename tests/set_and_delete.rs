@@ -113,9 +113,11 @@ fn update_existing_key() {
 #[test]
 fn update_existing_key_with_stdin() {
     let tmp = copy_env();
-    // Use assert_cmd::Command to test stdin input
+    // `--set -` opts into reading the value from stdin
     bin()
         .arg("NEW_TWO")
+        .arg("--set")
+        .arg("-")
         .arg("--file")
         .arg(tmp.path())
         .write_stdin("New stdin value")
@@ -128,6 +130,28 @@ fn update_existing_key_with_stdin() {
         .assert()
         .success()
         .stdout("New stdin value\n");
+}
+
+#[test]
+fn read_ignores_piped_stdin() {
+    // A plain read must never consume stdin, even when something is piped in.
+    let tmp = copy_env();
+    bin()
+        .arg("NEW_ONE")
+        .arg("--set")
+        .arg("Single line value")
+        .arg("--file")
+        .arg(tmp.path())
+        .assert()
+        .success();
+    bin()
+        .arg("NEW_ONE")
+        .arg("--file")
+        .arg(tmp.path())
+        .write_stdin("this should be ignored")
+        .assert()
+        .success()
+        .stdout("Single line value\n");
 }
 
 #[test]
@@ -289,6 +313,8 @@ fn chained_set_update_delete_workflow_preserves_file() {
 
     bin()
         .arg("NEW_TWO")
+        .arg("--set")
+        .arg("-")
         .arg("--file")
         .arg(tmp.path())
         .write_stdin("New stdin value")

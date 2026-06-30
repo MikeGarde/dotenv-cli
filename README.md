@@ -51,8 +51,12 @@ dotenv <key> --set <value>
 Or pipe a value in:
 
 ```shell
-echo <value> | dotenv <key>
+echo <value> | dotenv <key> --set -
 ```
+
+> A plain `dotenv <key>` always *reads* and never consumes stdin, so it's safe
+> to call inside scripts and pipelines. Writing from stdin requires the explicit
+> `--set -`.
 
 ### Deleting a Value
 
@@ -70,8 +74,8 @@ dotenv <key> --delete
 2. **Public Key** The `dotenv` command, with the `--multiline` flag, retrieves the stored private key and pipes it back to openssl. `openssl` then generates a corresponding public key. This public key is stored in the `.env` file under the variable `RSA_PUB`.
 
 ```shell
-openssl genpkey -algorithm RSA -outform PEM -pkeyopt rsa_keygen_bits:2048 2>/dev/null | dotenv RSA_KEY
-dotenv RSA_KEY -m | openssl rsa -pubout 2>/dev/null | dotenv RSA_PUB
+openssl genpkey -algorithm RSA -outform PEM -pkeyopt rsa_keygen_bits:2048 2>/dev/null | dotenv RSA_KEY --set -
+dotenv RSA_KEY -m | openssl rsa -pubout 2>/dev/null | dotenv RSA_PUB --set -
 ```
 
 ### App Version
