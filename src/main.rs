@@ -48,17 +48,12 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
     let delete = cli.delete;
     let keys = cli.key.clone();
 
-    // Read stdin before any other I/O
-    let stdin_value = read_pipe::read_pipe();
-    let set_opt = cli.set.clone();
-
-    if stdin_value.is_some() && set_opt.is_some() {
-        return Err(Box::new(RuleViolationError(
-            "Cannot use --set and stdin together".to_string(),
-        )));
-    }
-
-    let set_value_raw = stdin_value.or(set_opt);
+    // `--set -` is the explicit opt-in to read the value from stdin. Without it,
+    // stdin is never touched, so reading a key can never consume a caller's stdin.
+    let set_value_raw = match cli.set.clone() {
+        Some(v) if v == "-" => Some(read_pipe::read_stdin()),
+        other => other,
+    };
     let is_set = set_value_raw.is_some();
 
     let env_file = cli

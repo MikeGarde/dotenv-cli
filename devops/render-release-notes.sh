@@ -20,19 +20,22 @@ cat <<EOF
 brew install mikegarde/tap/dotenv-cli
 \`\`\`
 
-### npm
+### NPM
 
 \`\`\`bash
 npm install -g @mikegarde/dotenv-cli
 \`\`\`
 
-## Install on RHEL
+### Manual
+
+RHEL x86
 
 \`\`\`bash
-# x86
 curl -fsSL "https://github.com/MikeGarde/dotenv-cli/releases/download/${VERSION}/commitbot-${VERSION}-unknown-linux-musl-x86_64.tar.gz" | sudo tar -xz --no-same-owner -C /usr/local/bin dotenv
+\`\`\`
 
-# arm
+RHEL arm
+\`\`\`bash
 curl -fsSL "https://github.com/MikeGarde/dotenv-cli/releases/download/${VERSION}/commitbot-${VERSION}-unknown-linux-musl-aarch64.tar.gz" | sudo tar -xz --no-same-owner -C /usr/local/bin dotenv
 \`\`\`
 

@@ -25,7 +25,11 @@ pub struct Cli {
     #[arg(short, long, action = ArgAction::SetTrue, help = "Allow multiline values")]
     pub multiline: bool,
 
-    #[arg(short, long, help = "Update the environment variable in the .env file")]
+    #[arg(
+        short,
+        long,
+        help = "Update the environment variable in the .env file (use `--set -` to read the value from stdin)"
+    )]
     pub set: Option<String>,
 
     #[arg(short = 'D', long, action = ArgAction::SetTrue, help = "Delete the environment variable from the .env file")]
