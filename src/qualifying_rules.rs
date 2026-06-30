@@ -13,6 +13,7 @@ pub struct Options {
     pub multiline: bool,
     pub action_set: bool,
     pub action_delete: bool,
+    pub allow_missing: bool,
     pub single_key: bool,
     pub return_all_keys: bool,
     pub target_keys: Vec<String>,

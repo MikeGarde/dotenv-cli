@@ -8,8 +8,7 @@
   "type": "module",
   "files": [
     "bin/",
-    "postinstall.js",
-    "vendor/"
+    "postinstall.js"
   ],
   "scripts": {
     "build": "cargo build --release",

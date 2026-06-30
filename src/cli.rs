@@ -35,6 +35,9 @@ pub struct Cli {
     #[arg(short = 'D', long, action = ArgAction::SetTrue, help = "Delete the environment variable from the .env file")]
     pub delete: bool,
 
+    #[arg(long, action = ArgAction::SetTrue, help = "Exit 0 (with empty output) instead of 1 when a key is missing")]
+    pub allow_missing: bool,
+
     #[arg(short, long, action = ArgAction::SetTrue, help = "Output extra debugging")]
     pub debug: bool,
 }

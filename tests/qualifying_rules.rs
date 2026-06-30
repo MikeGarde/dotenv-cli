@@ -9,6 +9,7 @@ fn options() -> Options {
         multiline: false,
         action_set: false,
         action_delete: false,
+        allow_missing: false,
         single_key: false,
         return_all_keys: false,
         target_keys: Vec::new(),

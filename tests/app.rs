@@ -85,6 +85,30 @@ fn missing_key() {
 }
 
 #[test]
+fn missing_key_with_allow_missing_exits_zero() {
+    bin()
+        .arg("MISSING")
+        .arg("--allow-missing")
+        .arg("--file")
+        .arg(env_path())
+        .assert()
+        .success()
+        .stdout("\n");
+}
+
+#[test]
+fn present_key_with_allow_missing_still_returns_value() {
+    bin()
+        .arg("NAME")
+        .arg("--allow-missing")
+        .arg("--file")
+        .arg(env_path())
+        .assert()
+        .success()
+        .stdout("dotenv-cli\n");
+}
+
+#[test]
 fn valid_single_line_list() {
     bin()
         .arg("LIST_SINGLE_LINE")
