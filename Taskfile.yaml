@@ -91,7 +91,7 @@ tasks:
     desc: "Install the published package from the npm registry"
     cmds:
       - task: uninstall
-      - npm install -g @mikegarde/dotenv-cli
+      - npm install -g @mikegarde/dotenv-cli --allow-scripts=@mikegarde/dotenv-cli
 
   uninstall:
     desc: "Uninstall all local installations of dotenv-cli (cargo, npm, brew)"

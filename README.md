@@ -58,6 +58,16 @@ echo <value> | dotenv <key> --set -
 > to call inside scripts and pipelines. Writing from stdin requires the explicit
 > `--set -`.
 
+### Missing Keys
+
+By default, reading a key that doesn't exist prints an empty line and exits `1`.
+Inside scripts running under `set -e` this aborts the script. Use
+`--allow-missing` to exit `0` (still with empty output) when the key is absent:
+
+```shell
+dotenv <key> --allow-missing
+```
+
 ### Deleting a Value
 
 Delete a value from a .env file:

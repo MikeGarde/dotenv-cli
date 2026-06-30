@@ -91,6 +91,7 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
         multiline,
         action_set: is_set,
         action_delete: delete,
+        allow_missing: cli.allow_missing,
         single_key: keys.len() == 1,
         return_all_keys: keys.is_empty(),
         target_keys: keys.clone(),
@@ -155,7 +156,7 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
         0
     } else {
         let all_found = handlers::get_value::get_value(&options);
-        if all_found {
+        if all_found || options.allow_missing {
             0
         } else {
             1
