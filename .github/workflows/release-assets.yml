@@ -110,12 +110,12 @@ jobs:
           CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: ${{ matrix.target == 'x86_64-unknown-linux-musl' && matrix.linker || '' }}
         run: cargo build --locked --release --target ${{ matrix.target }}
 
-      - name: Package tar.gz archive
+      - name: Compress release binary
         shell: bash
         run: |
           set -euo pipefail
-          asset="dotenv-cli-${{ steps.meta.outputs.tag }}-${{ matrix.asset_target }}.tar.gz"
-          tar -C "target/${{ matrix.target }}/release" -czf "$asset" "${{ matrix.binary_name }}"
+          asset="dotenv-cli-${{ steps.meta.outputs.tag }}-${{ matrix.asset_target }}.gz"
+          gzip -n -c "target/${{ matrix.target }}/release/${{ matrix.binary_name }}" > "$asset"
           echo "ASSET_PATH=$asset" >> "$GITHUB_ENV"
 
       - name: Upload asset to GitHub release

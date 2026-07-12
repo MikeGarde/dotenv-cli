@@ -20,7 +20,7 @@ Find it on
 brew install mikegarde/tap/dotenv-cli
 
 # Using npm (Node.js)
-npm i -g @mikegarde/dotenv-cli
+npm i -g @mikegarde/dotenv-cli --allow-scripts=@mikegarde/dotenv-cli
 
 # Using Cargo (Rust)
 cargo install dotenv-cli

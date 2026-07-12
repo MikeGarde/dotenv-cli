@@ -5,13 +5,13 @@ set -euo pipefail
 TAG="${1:?usage: publish-if-complete.sh <tag>}"
 
 EXPECTED=(
-  "dotenv-cli-${TAG}-apple-darwin-aarch64.tar.gz"
-  "dotenv-cli-${TAG}-apple-darwin-x86_64.tar.gz"
-  "dotenv-cli-${TAG}-unknown-linux-gnu-aarch64.tar.gz"
-  "dotenv-cli-${TAG}-unknown-linux-gnu-x86_64.tar.gz"
-  "dotenv-cli-${TAG}-unknown-linux-musl-aarch64.tar.gz"
-  "dotenv-cli-${TAG}-unknown-linux-musl-x86_64.tar.gz"
-  "dotenv-cli-${TAG}-pc-windows-gnu-x86_64.tar.gz"
+  "dotenv-cli-${TAG}-apple-darwin-aarch64.gz"
+  "dotenv-cli-${TAG}-apple-darwin-x86_64.gz"
+  "dotenv-cli-${TAG}-unknown-linux-gnu-aarch64.gz"
+  "dotenv-cli-${TAG}-unknown-linux-gnu-x86_64.gz"
+  "dotenv-cli-${TAG}-unknown-linux-musl-aarch64.gz"
+  "dotenv-cli-${TAG}-unknown-linux-musl-x86_64.gz"
+  "dotenv-cli-${TAG}-pc-windows-gnu-x86_64.gz"
 )
 
 ACTUAL="$(gh release view "${TAG}" --json assets --jq '[.assets[].name]')"
