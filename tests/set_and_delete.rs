@@ -92,6 +92,58 @@ fn add_multiline_value_single_line() {
 }
 
 #[test]
+fn add_value_with_real_newlines_via_stdin() {
+    let tmp = copy_env();
+    bin()
+        .arg("PEM_KEY")
+        .arg("--set")
+        .arg("-")
+        .arg("--file")
+        .arg(tmp.path())
+        .write_stdin("-----BEGIN KEY-----\nline2\nline3\n-----END KEY-----")
+        .assert()
+        .success();
+    bin()
+        .arg("PEM_KEY")
+        .arg("--file")
+        .arg(tmp.path())
+        .arg("--multiline")
+        .assert()
+        .success()
+        .stdout("-----BEGIN KEY-----\nline2\nline3\n-----END KEY-----\n");
+}
+
+#[test]
+fn update_existing_key_with_real_newlines_via_stdin() {
+    let tmp = copy_env();
+    bin()
+        .arg("NEW_ONE")
+        .arg("--set")
+        .arg("placeholder")
+        .arg("--file")
+        .arg(tmp.path())
+        .assert()
+        .success();
+    bin()
+        .arg("NEW_ONE")
+        .arg("--set")
+        .arg("-")
+        .arg("--file")
+        .arg(tmp.path())
+        .write_stdin("first\nsecond\nthird")
+        .assert()
+        .success();
+    bin()
+        .arg("NEW_ONE")
+        .arg("--file")
+        .arg(tmp.path())
+        .arg("--multiline")
+        .assert()
+        .success()
+        .stdout("first\nsecond\nthird\n");
+}
+
+#[test]
 fn update_existing_key() {
     let tmp = copy_env();
     bin()
