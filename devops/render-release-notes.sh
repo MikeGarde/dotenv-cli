@@ -31,12 +31,14 @@ npm install -g @mikegarde/dotenv-cli
 RHEL x86
 
 \`\`\`bash
-curl -fsSL "https://github.com/MikeGarde/dotenv-cli/releases/download/${VERSION}/commitbot-${VERSION}-unknown-linux-musl-x86_64.tar.gz" | sudo tar -xz --no-same-owner -C /usr/local/bin dotenv
+curl -fsSL "$(asset_url "dotenv-cli-${VERSION}-unknown-linux-musl-x86_64.gz")" | gzip -dc | sudo tee /usr/local/bin/dotenv >/dev/null
+sudo chmod 0755 /usr/local/bin/dotenv
 \`\`\`
 
 RHEL arm
 \`\`\`bash
-curl -fsSL "https://github.com/MikeGarde/dotenv-cli/releases/download/${VERSION}/commitbot-${VERSION}-unknown-linux-musl-aarch64.tar.gz" | sudo tar -xz --no-same-owner -C /usr/local/bin dotenv
+curl -fsSL "$(asset_url "dotenv-cli-${VERSION}-unknown-linux-musl-aarch64.gz")" | gzip -dc | sudo tee /usr/local/bin/dotenv >/dev/null
+sudo chmod 0755 /usr/local/bin/dotenv
 \`\`\`
 
 
@@ -44,10 +46,10 @@ curl -fsSL "https://github.com/MikeGarde/dotenv-cli/releases/download/${VERSION}
 
 | OS | arm64 | x86_64 |
 | --- | --- | --- |
-| macOS | [Download]($(asset_url "dotenv-cli-${VERSION}-apple-darwin-aarch64.tar.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-apple-darwin-x86_64.tar.gz")) |
-| Ubuntu | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-gnu-aarch64.tar.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-gnu-x86_64.tar.gz")) |
-| RHEL | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-musl-aarch64.tar.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-musl-x86_64.tar.gz")) |
-| Windows | — | [Download]($(asset_url "dotenv-cli-${VERSION}-pc-windows-gnu-x86_64.tar.gz")) |
+| macOS | [Download]($(asset_url "dotenv-cli-${VERSION}-apple-darwin-aarch64.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-apple-darwin-x86_64.gz")) |
+| Ubuntu | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-gnu-aarch64.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-gnu-x86_64.gz")) |
+| RHEL | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-musl-aarch64.gz")) | [Download]($(asset_url "dotenv-cli-${VERSION}-unknown-linux-musl-x86_64.gz")) |
+| Windows | — | [Download]($(asset_url "dotenv-cli-${VERSION}-pc-windows-gnu-x86_64.gz")) |
 
 - Ubuntu and compatible distributions like Debian, Mint, etc. that use glibc.
 - RHEL and compatible distributions like Amazon, Rocky, etc. that use musl instead of glibc.

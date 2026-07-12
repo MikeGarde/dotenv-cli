@@ -4,8 +4,10 @@ import https from 'https';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { pipeline } from 'stream/promises';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
+import { createGunzip } from 'zlib';
 
 const require = createRequire(import.meta.url);
 const version = require('./package.json').version;
@@ -13,10 +15,6 @@ const repo = 'MikeGarde/dotenv-cli';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// For tar, use dynamic import:
-
-
 
 function getPlatform() {
   switch (process.platform) {
@@ -36,7 +34,7 @@ function getArch() {
 }
 
 function getAssetName() {
-  return `dotenv-cli-${version}-${getPlatform()}-${getArch()}.tar.gz`;
+  return `dotenv-cli-${version}-${getPlatform()}-${getArch()}.gz`;
 }
 
 function getDownloadUrl() {
@@ -55,15 +53,27 @@ function getBinPath() {
   return path.join(getVendorDir(), getBinName());
 }
 
-async function downloadAndExtract(url, destDir, binName) {
-  const tar = await import('tar');
+async function downloadAndInstall(url, destDir, binName) {
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-  const tmpFile = path.join(os.tmpdir(), `dotenv-cli-${Date.now()}.tar.gz`);
-  await download(url, tmpFile);
-  await tar.x({ file: tmpFile, cwd: destDir });
-  fs.chmodSync(path.join(destDir, binName), 0o755);
-  fs.unlinkSync(tmpFile);
-  console.log(`Installed dotenv binary to ${path.join(destDir, binName)}`);
+  const tmpFile = path.join(os.tmpdir(), `dotenv-cli-${Date.now()}.gz`);
+  const binPath = path.join(destDir, binName);
+
+  try {
+    await download(url, tmpFile);
+    await pipeline(
+      fs.createReadStream(tmpFile),
+      createGunzip(),
+      fs.createWriteStream(binPath),
+    );
+    fs.chmodSync(binPath, 0o755);
+  } catch (error) {
+    fs.rmSync(binPath, { force: true });
+    throw error;
+  } finally {
+    fs.rmSync(tmpFile, { force: true });
+  }
+
+  console.log(`Installed dotenv binary to ${binPath}`);
 }
 
 function download(url, tmpFile, redirectCount = 0) {
@@ -105,7 +115,7 @@ async function main() {
 
   const binDir = getVendorDir();
   const url = getDownloadUrl();
-  await downloadAndExtract(url, binDir, getBinName());
+  await downloadAndInstall(url, binDir, getBinName());
 }
 
 main().catch((err) => {
