@@ -76,9 +76,13 @@ impl EnvObject {
     }
 
     fn resolve_value(&self, input: &str) -> String {
+        // A circular reference (e.g. A=${B}, B=${A}) oscillates between the same
+        // few strings forever instead of converging, so track seen states and
+        // bail out on a repeat rather than looping indefinitely.
         let mut result = input.to_string();
+        let mut seen = std::collections::HashSet::new();
+        seen.insert(result.clone());
         loop {
-            let prev = result.clone();
             let mut new_result = String::new();
             let mut chars = result.chars().peekable();
             while let Some(c) = chars.next() {
@@ -100,10 +104,11 @@ impl EnvObject {
                     new_result.push(c);
                 }
             }
-            result = new_result;
-            if result == prev {
+            if new_result == result || !seen.insert(new_result.clone()) {
+                result = new_result;
                 break;
             }
+            result = new_result;
         }
         result
     }
