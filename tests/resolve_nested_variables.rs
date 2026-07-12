@@ -52,3 +52,38 @@ fn resolve_merged_value() {
     env.resolve_nested_variables();
     assert_eq!(env.get("VAR3").unwrap().value, "Hello World & Universe");
 }
+
+#[test]
+fn resolve_circular_reference_terminates() {
+    let mut env = EnvObject::new();
+    env.set(
+        "VAR_A".to_string(),
+        EnvValue::with_lines("${VAR_B}".to_string(), 0, 0),
+    );
+    env.set(
+        "VAR_B".to_string(),
+        EnvValue::with_lines("${VAR_A}".to_string(), 1, 1),
+    );
+    env.resolve_nested_variables();
+    assert!(env.get("VAR_A").unwrap().value.contains("${"));
+    assert!(env.get("VAR_B").unwrap().value.contains("${"));
+}
+
+#[test]
+fn resolve_three_way_circular_reference_terminates() {
+    let mut env = EnvObject::new();
+    env.set(
+        "VAR_A".to_string(),
+        EnvValue::with_lines("${VAR_B}".to_string(), 0, 0),
+    );
+    env.set(
+        "VAR_B".to_string(),
+        EnvValue::with_lines("${VAR_C}".to_string(), 1, 1),
+    );
+    env.set(
+        "VAR_C".to_string(),
+        EnvValue::with_lines("${VAR_A}".to_string(), 2, 2),
+    );
+    env.resolve_nested_variables();
+    assert!(env.get("VAR_A").unwrap().value.contains("${"));
+}
