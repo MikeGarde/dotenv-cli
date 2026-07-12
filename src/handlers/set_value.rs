@@ -11,7 +11,11 @@ use crate::qualifying_rules::Options;
 pub fn set_value(options: &Options) {
     let key = &options.target_keys[0];
     let set_val = options.set_value.as_deref().unwrap_or("");
-    let new_line = format!("{}={}", key, set_val);
+    let new_line = if set_val.contains('\n') {
+        format!("{}=\"{}\"", key, set_val)
+    } else {
+        format!("{}={}", key, set_val)
+    };
 
     let env_object = options.env_object.as_ref().unwrap();
 
