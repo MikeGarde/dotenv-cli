@@ -102,5 +102,58 @@ fn unterminated_quoted_value_fails_loudly_instead_of_swallowing_rest_of_file() {
         .arg(tmp.path())
         .assert()
         .failure()
-        .stderr(predicate::str::contains("EnvParseError"));
+        .stderr(predicate::str::contains(
+            "Unterminated quoted value starting on line 1",
+        ));
+}
+
+#[test]
+fn double_quotes_expand_variables() {
+    let tmp = write_env("BASE=Hello\nEXPAND=\"${BASE} World\"\n");
+    let json = env_json(&tmp);
+    assert_eq!(json["EXPAND"], "Hello World");
+}
+
+#[test]
+fn single_quotes_disable_variable_expansion() {
+    let tmp = write_env("BASE=Hello\nLITERAL='${BASE} World'\n");
+    let json = env_json(&tmp);
+    assert_eq!(json["LITERAL"], "${BASE} World");
+}
+
+#[test]
+fn single_quotes_preserve_password_containing_dollar() {
+    // A password that looks like a variable reference must be stored verbatim.
+    let tmp = write_env("BASE=Hello\nPASSWORD='p${BASE}ss$w0rd$'\n");
+    let json = env_json(&tmp);
+    assert_eq!(json["PASSWORD"], "p${BASE}ss$w0rd$");
+}
+
+#[test]
+fn multiline_single_quotes_disable_expansion() {
+    let tmp = write_env("BASE=Hello\nLITERAL='${BASE}\nsecond line'\n");
+    let json = env_json(&tmp);
+    assert_eq!(json["LITERAL"], "${BASE}\nsecond line");
+}
+
+fn single_quote_fixture() -> String {
+    let here = Path::new(env!("CARGO_MANIFEST_DIR"));
+    here.join("tests/envFiles/singleQuote.env")
+        .to_string_lossy()
+        .to_string()
+}
+
+#[test]
+fn single_quote_fixture_expansion_rules() {
+    let output = bin()
+        .arg("--file")
+        .arg(single_quote_fixture())
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(stdout.trim()).unwrap();
+    assert_eq!(json["EXPAND_DOUBLE"], "Hello World");
+    assert_eq!(json["LITERAL_SINGLE"], "${BASE} World");
+    assert_eq!(json["PASSWORD"], "p${BASE}ss$w0rd$");
+    assert_eq!(json["BARE_DOLLAR"], "pa$$w0rd");
 }

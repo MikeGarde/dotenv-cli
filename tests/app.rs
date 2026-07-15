@@ -18,6 +18,13 @@ fn bad_list_path() -> String {
         .to_string()
 }
 
+fn space_path() -> String {
+    let here = Path::new(env!("CARGO_MANIFEST_DIR"));
+    here.join("tests/envFiles/space.env")
+        .to_string_lossy()
+        .to_string()
+}
+
 #[test]
 fn missing_env_file() {
     bin()
@@ -138,5 +145,124 @@ fn invalid_list_throws_error() {
         .arg(bad_list_path())
         .assert()
         .failure()
-        .stderr(predicate::str::contains("EnvParseError"));
+        .stderr(predicate::str::contains("Error parsing .env file at line 1"));
+}
+
+#[test]
+fn validate_valid_file_succeeds() {
+    bin()
+        .arg("--validate")
+        .arg("--file")
+        .arg(env_path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("is valid"));
+}
+
+#[test]
+fn validate_short_flag_succeeds() {
+    bin()
+        .arg("-V")
+        .arg("--file")
+        .arg(env_path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("is valid"));
+}
+
+#[test]
+fn validate_invalid_file_fails() {
+    bin()
+        .arg("--validate")
+        .arg("--file")
+        .arg(bad_list_path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Error parsing .env file at line 1"));
+}
+
+#[test]
+fn validate_reports_whitespace_and_duplicate_keys() {
+    bin()
+        .arg("--validate")
+        .arg("--file")
+        .arg(space_path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("found 3 problems"))
+        .stderr(predicate::str::contains(
+            "line 1: whitespace around '=' is not allowed",
+        ))
+        .stderr(predicate::str::contains(
+            "line 2: whitespace around '=' is not allowed",
+        ))
+        .stderr(predicate::str::contains("line 2: duplicate key 'SPACE'"));
+}
+
+#[test]
+fn validate_missing_file_fails() {
+    bin()
+        .arg("--validate")
+        .arg("--file")
+        .arg("non-existent.env")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("File not found"));
+}
+
+#[test]
+fn validate_with_key_fails() {
+    bin()
+        .arg("--validate")
+        .arg("NAME")
+        .arg("--file")
+        .arg(env_path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Cannot use --validate with any other options",
+        ));
+}
+
+#[test]
+fn validate_with_set_fails() {
+    bin()
+        .arg("--validate")
+        .arg("--set")
+        .arg("value")
+        .arg("--file")
+        .arg(env_path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Cannot use --validate with any other options",
+        ));
+}
+
+#[test]
+fn validate_with_delete_fails() {
+    bin()
+        .arg("--validate")
+        .arg("--delete")
+        .arg("--file")
+        .arg(env_path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Cannot use --validate with any other options",
+        ));
+}
+
+#[test]
+fn validate_with_json_fails() {
+    bin()
+        .arg("--validate")
+        .arg("--json")
+        .arg("--file")
+        .arg(env_path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Cannot use --validate with any other options",
+        ));
 }

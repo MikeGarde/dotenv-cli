@@ -3,7 +3,7 @@
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mikegarde/dotenv-cli/test.rust.yml)](https://github.com/MikeGarde/dotenv-cli/actions)
 [![Codecov](https://img.shields.io/codecov/c/github/mikegarde/dotenv-cli)](https://app.codecov.io/gh/MikeGarde/dotenv-cli)
 [![NPM Downloads](https://img.shields.io/npm/dy/%40mikegarde%2Fdotenv-cli?logo=npm&color=blue)](https://www.npmjs.com/package/@mikegarde/dotenv-cli)
-[![Crates.io Downloads](https://img.shields.io/crates/d/dotenv-cli?logo=crates&color=blue)](https://crates.io/crates/dotenv-cli)
+[![Crates.io Downloads](https://img.shields.io/crates/d/dotenv-cli?logo=Rust&color=blue)](https://crates.io/crates/dotenv-cli)
 [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/mikegarde/dotenv-cli/total?logo=github&color=blue)](https://github.com/MikeGarde/dotenv-cli/releases)
 
 A simple way to retrieve, update, or delete .env variables directly from the command line.
@@ -74,6 +74,14 @@ Delete a value from a .env file:
 
 ```shell
 dotenv <key> --delete
+```
+
+### Validating a File
+
+Check that a .env file can be parsed without errors:
+
+```shell
+dotenv --validate --file .env.example
 ```
 
 ## Examples
