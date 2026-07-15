@@ -24,8 +24,7 @@ fn main() {
             if let Some(err) = e.downcast_ref::<RuleViolationError>() {
                 eprintln!("{}", err);
             } else if let Some(err) = e.downcast_ref::<EnvParseError>() {
-                // Include "EnvParseError" in stderr so tests can detect it
-                eprintln!("An unexpected error occurred: EnvParseError: {}", err);
+                eprintln!("{}", err);
             } else {
                 eprintln!("An unexpected error occurred: {}", e);
             }
@@ -35,11 +34,54 @@ fn main() {
     std::process::exit(exit_code);
 }
 
+fn resolve_env_path(file_arg: Option<String>) -> Result<String, Box<dyn std::error::Error>> {
+    let env_file = file_arg
+        .or_else(|| std::env::var("DOTENV_FILE").ok())
+        .unwrap_or_else(|| ".env".to_string());
+
+    let full_env_path: PathBuf = if Path::new(&env_file).is_absolute() {
+        PathBuf::from(&env_file)
+    } else {
+        std::env::current_dir()
+            .map_err(|e| Box::new(RuleViolationError(e.to_string())) as Box<dyn std::error::Error>)?
+            .join(&env_file)
+    };
+    let full_env_path_str = full_env_path.to_string_lossy().to_string();
+
+    if !full_env_path.exists() {
+        return Err(Box::new(RuleViolationError(format!(
+            "File not found: {}",
+            full_env_path_str
+        ))));
+    }
+
+    Ok(full_env_path_str)
+}
+
 fn run() -> Result<i32, Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     if cli.version {
         println!("{}", env!("CARGO_PKG_VERSION"));
+        return Ok(0);
+    }
+
+    if cli.validate {
+        if !cli.key.is_empty() || cli.set.is_some() || cli.delete || cli.json || cli.no_json {
+            return Err(Box::new(RuleViolationError(
+                "Cannot use --validate with any other options".to_string(),
+            )));
+        }
+
+        let full_env_path_str = resolve_env_path(cli.file.clone())?;
+
+        if cli.debug {
+            eprintln!("File: {}", full_env_path_str);
+        }
+
+        parse_env_file(&full_env_path_str).map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+
+        println!("{} is valid", full_env_path_str);
         return Ok(0);
     }
 
@@ -56,31 +98,11 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
     };
     let is_set = set_value_raw.is_some();
 
-    let env_file = cli
-        .file
-        .or_else(|| std::env::var("DOTENV_FILE").ok())
-        .unwrap_or_else(|| ".env".to_string());
-
-    // Resolve to absolute path (mirrors Node's path.resolve)
-    let full_env_path: PathBuf = if Path::new(&env_file).is_absolute() {
-        PathBuf::from(&env_file)
-    } else {
-        std::env::current_dir()
-            .map_err(|e| Box::new(RuleViolationError(e.to_string())) as Box<dyn std::error::Error>)?
-            .join(&env_file)
-    };
-    let full_env_path_str = full_env_path.to_string_lossy().to_string();
+    let full_env_path_str = resolve_env_path(cli.file.clone())?;
 
     if debug {
         eprintln!("Keys: {:?}", keys);
         eprintln!("File: {}", full_env_path_str);
-    }
-
-    if !full_env_path.exists() {
-        return Err(Box::new(RuleViolationError(format!(
-            "File not found: {}",
-            full_env_path_str
-        ))));
     }
 
     let mut options = Options {

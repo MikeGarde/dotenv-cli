@@ -8,6 +8,7 @@ pub struct EnvValue {
     pub value: String,
     pub line_start: i64,
     pub line_end: i64,
+    pub no_expand: bool,
 }
 
 impl EnvValue {
@@ -17,6 +18,7 @@ impl EnvValue {
             value,
             line_start: -1,
             line_end: -1,
+            no_expand: false,
         }
     }
 
@@ -25,6 +27,7 @@ impl EnvValue {
             value,
             line_start,
             line_end,
+            no_expand: false,
         }
     }
 }
@@ -64,7 +67,12 @@ impl EnvObject {
     pub fn resolve_nested_variables(&mut self) {
         let keys: Vec<String> = self.entries.keys().cloned().collect();
         for key in &keys {
-            let value = self.entries[key.as_str()].value.clone();
+            let entry = &self.entries[key.as_str()];
+            // Single-quoted values are literal — never expand them.
+            if entry.no_expand {
+                continue;
+            }
+            let value = entry.value.clone();
             if !value.contains("${") {
                 continue;
             }

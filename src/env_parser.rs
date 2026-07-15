@@ -167,6 +167,9 @@ pub fn parse_env_file(file_path: &str) -> Result<EnvObject, EnvParseError> {
     // Keep raw lines for line-number-based splice operations.
     let raw_lines: Vec<&str> = content.split('\n').collect();
     let mut env_object = EnvObject::new();
+    // Non-structural problems (bad spacing, duplicate keys) are collected rather
+    // than failing fast, so `--validate` can report every offending line at once.
+    let mut violations: Vec<(usize, String)> = Vec::new();
     let mut i = 0;
 
     while i < raw_lines.len() {
@@ -188,12 +191,29 @@ pub fn parse_env_file(file_path: &str) -> Result<EnvObject, EnvParseError> {
             }
         };
 
-        let key = trimmed[..eq_pos].to_string();
-        let value_part = trimmed[eq_pos + 1..].trim();
+        let key_segment = &trimmed[..eq_pos];
+        let value_segment = &trimmed[eq_pos + 1..];
+        let key = key_segment.trim().to_string();
+        let value_part = value_segment.trim();
 
         if key.is_empty() {
             i += 1;
             continue;
+        }
+
+        // Whitespace hugging the '=' (`KEY = value` or `KEY= value`) is not part
+        // of the key or value and is almost always a mistake.
+        if key_segment.ends_with(char::is_whitespace) || value_segment.starts_with(char::is_whitespace)
+        {
+            violations.push((
+                line_start + 1,
+                format!("whitespace around '=' is not allowed: {}", raw_lines[line_start]),
+            ));
+        }
+
+        // A key defined more than once is ambiguous.
+        if env_object.get(&key).is_some() {
+            violations.push((line_start + 1, format!("duplicate key '{}'", key)));
         }
 
         if value_part.starts_with('"') || value_part.starts_with('\'') {
@@ -207,10 +227,10 @@ pub fn parse_env_file(file_path: &str) -> Result<EnvObject, EnvParseError> {
             let (end, close_pos) = find_quote_close(&raw_lines, line_start, open_pos, quote)?;
             let value =
                 extract_quoted_value(&raw_lines, line_start, end, open_pos, close_pos, quote)?;
-            env_object.set(
-                key,
-                EnvValue::with_lines(value, line_start as i64, end as i64),
-            );
+            let mut env_value = EnvValue::with_lines(value, line_start as i64, end as i64);
+            // Single quotes disable ${VAR} expansion (literal, POSIX-style).
+            env_value.no_expand = quote == '\'';
+            env_object.set(key, env_value);
             i = end + 1;
         } else if value_part.starts_with('[') {
             let end = get_end_line(&raw_lines, line_start, "]");
@@ -235,6 +255,23 @@ pub fn parse_env_file(file_path: &str) -> Result<EnvObject, EnvParseError> {
             );
             i += 1;
         }
+    }
+
+    if !violations.is_empty() {
+        let first_line = violations[0].0;
+        let message = if violations.len() == 1 {
+            violations[0].1.clone()
+        } else {
+            let list: String = violations
+                .iter()
+                .map(|(l, m)| format!("\n  - line {}: {}", l, m))
+                .collect();
+            format!("found {} problems:{}", violations.len(), list)
+        };
+        return Err(EnvParseError {
+            line: first_line,
+            message,
+        });
     }
 
     env_object.resolve_nested_variables();
