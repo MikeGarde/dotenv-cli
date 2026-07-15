@@ -203,7 +203,7 @@ dependencies = [
 
 [[package]]
 name = "dotenv-cli"
-version = "1.1.2"
+version = "1.2.0"
 dependencies = [
  "assert_cmd",
  "clap",
