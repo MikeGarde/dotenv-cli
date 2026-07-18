@@ -164,9 +164,7 @@ jobs:
 
       - name: Install package dependencies
         if: steps.publish.outputs.published == 'true'
-        run: |
-          npm install -g npm@latest
-          npm ci --ignore-scripts
+        run: npm ci --ignore-scripts
 
       - name: Publish to npm
         if: steps.publish.outputs.published == 'true'
