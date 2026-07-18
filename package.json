@@ -14,8 +14,6 @@
     "build": "cargo build --release",
     "test": "cargo clippy --all-targets --all-features -- -D warnings && cargo test --all-features",
     "pack:dry-run": "npm pack --dry-run",
-    "publish:npm": "npm publish --access public --registry https://registry.npmjs.org",
-    "publish:github": "npm publish --access public --registry https://npm.pkg.github.com",
     "postinstall": "node ./postinstall.js"
   },
   "engines": {
