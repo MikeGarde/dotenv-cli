@@ -5,6 +5,9 @@ on:
     workflows: ["Release Assets"]
     types: [completed]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
@@ -16,7 +19,7 @@ jobs:
 
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g @mikegarde/dotenv-cli

@@ -35,7 +35,7 @@ jobs:
       target_branch: ${{ steps.plan.outputs.target_branch }}
     steps:
       - name: Checkout selected branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.target_branch }}
           fetch-depth: 0
@@ -57,7 +57,7 @@ jobs:
       release_sha: ${{ steps.release_commit.outputs.release_sha }}
     steps:
       - name: Checkout target branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.plan.outputs.target_branch }}
           fetch-depth: 0
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out release commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.prepare_release.outputs.release_sha }}
 
