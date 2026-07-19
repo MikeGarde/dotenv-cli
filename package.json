@@ -3,7 +3,7 @@
   "version": "1.2.1",
   "description": "Read and update dotenv files from the cli",
   "bin": {
-    "dotenv": "./bin/dotenv"
+    "dotenv": "bin/dotenv"
   },
   "type": "module",
   "files": [

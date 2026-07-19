@@ -83,6 +83,8 @@ tasks:
       - task: uninstall
       - npm install
       - task: build:release
+      - mkdir -p vendor
+      - cp target/release/dotenv vendor/dotenv
       - npm install -g
 
   install:npm:repo:

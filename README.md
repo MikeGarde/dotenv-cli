@@ -6,7 +6,7 @@
 [![Crates.io Downloads](https://img.shields.io/crates/d/dotenv-cli?logo=Rust&color=blue)](https://crates.io/crates/dotenv-cli)
 [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/mikegarde/dotenv-cli/total?logo=github&color=blue)](https://github.com/MikeGarde/dotenv-cli/releases)
 
-A simple way to retrieve, update, or delete .env variables directly from the command line.
+A simple way to retrieve, update, delete, or inject .env variables directly from the command line.
 
 ## Install
 
@@ -76,6 +76,27 @@ Delete a value from a .env file:
 dotenv <key> --delete
 ```
 
+### Running a Command
+
+Load the variables from a `.env` file and run a command with them injected into
+its environment. Everything after `--` is treated as the command to run:
+
+```shell
+dotenv -- npm run start
+```
+
+The child process inherits the current environment merged with the values from
+the `.env` file. Variables already present in the environment take precedence
+over values from the file, so an existing `export FOO=...` is not clobbered.
+
+This respects `--file` and the `DOTENV_FILE` environment variable, so you can run against any file:
+
+```shell
+dotenv --file .env.production -- ./deploy.sh
+```
+
+The command's exit code is passed through, making it safe to chain in scripts and CI pipelines.
+
 ### Validating a File
 
 Check that a .env file can be parsed without errors:
@@ -88,8 +109,11 @@ dotenv --validate --file .env.example
 
 ### RSA Key Pair
 
-1. **Private Key:** Generate a new key using the `openssl` command. The private key is then stored in the .env file under the variable `RSA_KEY`.
-2. **Public Key** The `dotenv` command, with the `--multiline` flag, retrieves the stored private key and pipes it back to openssl. `openssl` then generates a corresponding public key. This public key is stored in the `.env` file under the variable `RSA_PUB`.
+1. **Private Key:** Generate a new key using the `openssl` command. The private key is then 
+   stored in the .env file under the variable `RSA_KEY`.
+2. **Public Key** The `dotenv` command, with the `--multiline` flag, retrieves the stored private 
+   key and pipes it back to openssl. `openssl` then generates a corresponding public key. This 
+   public key is stored in the `.env` file under the variable `RSA_PUB`.
 
 ```shell
 openssl genpkey -algorithm RSA -outform PEM -pkeyopt rsa_keygen_bits:2048 2>/dev/null | dotenv RSA_KEY --set -
@@ -98,7 +122,9 @@ dotenv RSA_KEY -m | openssl rsa -pubout 2>/dev/null | dotenv RSA_PUB --set -
 
 ### App Version
 
-This demonstrates two methods for updating the `APP_VERSION` in your `.env` file. The `sed` command is versatile and powerful, allowing for complex text manipulations. On the other hand, `dotenv` provides a more readable and straightforward syntax.
+This demonstrates two methods for updating the `APP_VERSION` in your `.env` file. The `sed` 
+command is versatile and powerful, allowing for complex text manipulations. On the other 
+hand, `dotenv` provides a more readable and straightforward syntax.
 
 ```shell
 NEW_VERSION=3.22.1
@@ -131,8 +157,8 @@ $ dotenv | jq 'to_entries | map(select(.key | startswith("DB_")))[] | "\(.key)=\
 
 ### JSON
 
-By default multiple keys are returned as a JSON object. To return a single key as a JSON object, use the `--json` flag.
-To not return a JSON object, use the `--no-json` flag.
+By default, multiple keys are returned as a JSON object. To return a single key as a 
+JSON object, use the `--json` flag. To not return a JSON object, use the `--no-json` flag.
 
 Return a .env file as JSON:
 
@@ -163,13 +189,11 @@ KUpRKfFLfRYC9AIKjbJTWit+CqvjWYzvQwECAwEAAQJAIJLixBy2qpFoS4DSmoEm
 
 ### Using DOTENV_FILE Environment Variable
 
-You can define the `DOTENV_FILE` environment variable in your shell or script to specify the `.env` file to use, instead
-of passing the `--file` option every time.
+You can define the `DOTENV_FILE` environment variable in your shell or script to specify the 
+`.env` file to use, instead of passing the `--file` option every time. If the `--file` option 
+is provided, it will override the `DOTENV_FILE` environment variable.
 
 ```shell
 export DOTENV_FILE=.env.example
 dotenv <key>
 ```
-
-This will use the `.env.example` file automatically. If the `--file` option is provided, it will override the
-`DOTENV_FILE` environment variable.

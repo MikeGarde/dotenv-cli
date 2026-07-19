@@ -43,4 +43,11 @@ pub struct Cli {
 
     #[arg(short, long, action = ArgAction::SetTrue, help = "Output extra debugging")]
     pub debug: bool,
+
+    #[arg(
+        last = true,
+        value_name = "command",
+        help = "Run a command with the .env variables injected (e.g. `dotenv -- npm run start`)"
+    )]
+    pub command: Vec<String>,
 }
