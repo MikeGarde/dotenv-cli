@@ -85,6 +85,33 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
         return Ok(0);
     }
 
+    // `dotenv -- <command> [args...]` runs a command with
+    // the .env variables injected into its environment.
+    if !cli.command.is_empty() {
+        if !cli.key.is_empty() || cli.set.is_some() || cli.delete || cli.json {
+            return Err(Box::new(RuleViolationError(
+                "Cannot combine a command (after `--`) with keys, --set, --delete, or --json"
+                    .to_string(),
+            )));
+        }
+
+        let full_env_path_str = resolve_env_path(cli.file.clone())?;
+
+        if cli.debug {
+            eprintln!("File: {}", full_env_path_str);
+            eprintln!("Command: {:?}", cli.command);
+        }
+
+        let env_object = parse_env_file(&full_env_path_str)
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+
+        return Ok(handlers::run_command::run_command(
+            &env_object,
+            &cli.command,
+            cli.debug,
+        ));
+    }
+
     let debug = cli.debug;
     let multiline = cli.multiline;
     let delete = cli.delete;
