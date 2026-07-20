@@ -57,6 +57,22 @@ fn passes_through_exit_code() {
         .code(3);
 }
 
+#[cfg(unix)]
+#[test]
+fn signal_terminated_command_exits_128_plus_signal() {
+    let env = env_file("FOO=bar\n");
+    // SIGTERM is 15, so shells report 143.
+    bin()
+        .arg("--file")
+        .arg(env.path())
+        .arg("--")
+        .arg("bash")
+        .arg("-c")
+        .arg("kill -TERM $$; sleep 5")
+        .assert()
+        .code(143);
+}
+
 #[test]
 fn existing_environment_takes_precedence() {
     let env = env_file("GREETING=fromfile\n");
