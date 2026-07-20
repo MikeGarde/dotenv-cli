@@ -12,7 +12,7 @@ pub fn get_value(options: &Options) -> bool {
     let env_object = options.env_object.as_ref().unwrap();
     let mut all_found = true;
 
-    let keys: Vec<String> = if options.target_keys.is_empty() {
+    let keys: Vec<String> = if options.return_all_keys {
         env_object.keys().cloned().collect()
     } else {
         options.target_keys.clone()
