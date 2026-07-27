@@ -22,6 +22,11 @@ tasks:
       - cargo clippy --all-targets --all-features -- -D warnings
       - cargo test --all-features
 
+  lint:fix:
+    desc: "Auto-fix clippy lints where possible (same scope as `task test`)"
+    cmds:
+      - cargo clippy --fix --all-targets --all-features --allow-dirty --allow-staged
+
   build:
     desc: "Build debug binary for the host"
     silent: true

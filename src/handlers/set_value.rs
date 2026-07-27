@@ -34,10 +34,16 @@ pub fn set_value(options: &Options) {
         fs::write(&options.full_env_path, lines.join("\n")).expect("Failed to write .env file");
     } else {
         // Append new key to end of file
+        let existing = fs::read(&options.full_env_path).expect("Failed to read .env file");
+        let needs_leading_newline = !existing.is_empty() && existing.last() != Some(&b'\n');
+
         let mut file = fs::OpenOptions::new()
             .append(true)
             .open(&options.full_env_path)
             .expect("Failed to open .env file for appending");
+        if needs_leading_newline {
+            writeln!(file).expect("Failed to append to .env file");
+        }
         writeln!(file, "{}", new_line).expect("Failed to append to .env file");
     }
 }
