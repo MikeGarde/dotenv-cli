@@ -464,3 +464,39 @@ fn add_and_delete_single_key_preserves_file() {
         hash2
     );
 }
+
+#[test]
+fn add_key_to_file_without_trailing_newline() {
+    use std::io::Write;
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write_all(b"FOO=bar").unwrap(); // deliberately no trailing newline
+    tmp.flush().unwrap();
+
+    bin()
+        .arg("BAZ")
+        .arg("--set")
+        .arg("qux")
+        .arg("--file")
+        .arg(tmp.path())
+        .assert()
+        .success();
+
+    // Both keys must be readable and intact.
+    bin()
+        .arg("FOO")
+        .arg("--file")
+        .arg(tmp.path())
+        .assert()
+        .success()
+        .stdout("bar\n");
+    bin()
+        .arg("BAZ")
+        .arg("--file")
+        .arg(tmp.path())
+        .assert()
+        .success()
+        .stdout("qux\n");
+
+    let content = fs::read_to_string(tmp.path()).unwrap();
+    assert_eq!(content, "FOO=bar\nBAZ=qux\n");
+}
