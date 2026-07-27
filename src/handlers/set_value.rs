@@ -42,7 +42,7 @@ pub fn set_value(options: &Options) {
             .open(&options.full_env_path)
             .expect("Failed to open .env file for appending");
         if needs_leading_newline {
-            write!(file, "\n").expect("Failed to append to .env file");
+            writeln!(file).expect("Failed to append to .env file");
         }
         writeln!(file, "{}", new_line).expect("Failed to append to .env file");
     }
