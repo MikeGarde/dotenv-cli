@@ -165,7 +165,8 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
     let env_object = parse_env_file(&options.full_env_path)
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
-    // Wildcard expansion: `DB_*` → matched keys, automatically enables JSON output
+    // Wildcard expansion: `DB_*` -> matched keys, automatically enables JSON output.
+    // Read-only: a wildcard with --set/--delete is rejected by the qualifying rules.
     if keys.len() == 1 && !options.no_json && options.target_keys[0].contains('*') {
         if debug {
             eprintln!("Wildcard found");
