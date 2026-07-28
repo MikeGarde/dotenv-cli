@@ -44,5 +44,12 @@ pub fn qualifying_rules(opts: &Options) -> Result<(), RuleViolationError> {
             "Must specify a single key when using --delete".to_string(),
         ));
     }
+    // A wildcard names zero or more keys, so there is no single key to write to
+    // or remove. Rather than guess at which match was meant, refuse the write.
+    if (opts.action_set || opts.action_delete) && opts.target_keys.iter().any(|k| k.contains('*')) {
+        return Err(RuleViolationError(
+            "Cannot use a wildcard key with --set or --delete".to_string(),
+        ));
+    }
     Ok(())
 }

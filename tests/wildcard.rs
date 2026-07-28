@@ -1,5 +1,8 @@
 use assert_cmd::Command;
+use std::fs;
+use std::io::Write;
 use std::path::Path;
+use tempfile::NamedTempFile;
 
 fn bin() -> Command {
     Command::cargo_bin("dotenv").unwrap()
@@ -86,4 +89,56 @@ fn no_json_disables_wildcard_expansion() {
         .arg(env_path())
         .assert()
         .failure();
+}
+
+const WRITABLE: &[u8] = b"# header\nDB_HOST=localhost\nAPP=1\nDB_USER=root\n";
+
+fn writable_env() -> NamedTempFile {
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write_all(WRITABLE).unwrap();
+    tmp.flush().unwrap();
+    tmp
+}
+
+/// A wildcard names zero or more keys, so there is no single key to write to or
+/// remove. Rather than guessing at which match was meant (or panicking when
+/// there is none), the pattern is refused and the file is left untouched.
+fn assert_write_rejected(pattern: &str, action: &[&str]) {
+    let tmp = writable_env();
+    bin()
+        .arg(pattern)
+        .args(action)
+        .arg("--file")
+        .arg(tmp.path())
+        .assert()
+        .code(1)
+        .stderr("Cannot use a wildcard key with --set or --delete\n");
+
+    assert_eq!(
+        fs::read(tmp.path()).unwrap(),
+        WRITABLE,
+        "{} {:?} must not modify the file",
+        pattern,
+        action
+    );
+}
+
+#[test]
+fn wildcard_set_is_rejected() {
+    assert_write_rejected("DB_*", &["--set", "zzz"]);
+}
+
+#[test]
+fn wildcard_set_matching_nothing_is_rejected() {
+    assert_write_rejected("ZZZ_*", &["--set", "zzz"]);
+}
+
+#[test]
+fn wildcard_delete_is_rejected() {
+    assert_write_rejected("DB_*", &["--delete"]);
+}
+
+#[test]
+fn wildcard_delete_matching_nothing_is_rejected() {
+    assert_write_rejected("ZZZ_*", &["--delete"]);
 }
