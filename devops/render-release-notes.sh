@@ -32,10 +32,10 @@ npm install -g @mikegarde/dotenv-cli
 ARG TARGETARCH
 ARG DOTENV_CLI_VERSION=${VERSION}
 
-RUN ARCH=$([ "$TARGETARCH" = "arm64" ] && echo "aarch64" || echo "x86_64") \
- && curl -fsSL \
-    "https://github.com/MikeGarde/dotenv-cli/releases/download/${DOTENV_CLI_VERSION}/dotenv-cli-${DOTENV_CLI_VERSION}-unknown-linux-gnu-${ARCH}.gz" \
-    | gzip -d > /usr/local/bin/dotenv \
+RUN ARCH=\$([ "\$TARGETARCH" = "arm64" ] && echo "aarch64" || echo "x86_64") \\
+ && curl -fsSL \\
+    "https://github.com/MikeGarde/dotenv-cli/releases/download/\${DOTENV_CLI_VERSION}/dotenv-cli-\${DOTENV_CLI_VERSION}-unknown-linux-gnu-\${ARCH}.gz" \\
+    | gzip -d > /usr/local/bin/dotenv \\
  && chmod +x /usr/local/bin/dotenv
 \`\`\`
 
