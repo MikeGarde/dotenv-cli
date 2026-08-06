@@ -114,6 +114,7 @@ tasks:
     cmds:
       - task: test
       - bash devops/release.sh {{.VERSION}}
+      - echo "Don't forget \033[0;32mcargo publish"
 
   publish:npm:
     desc: "Manually publish the current version to npmjs (normally handled by GitHub Actions)"
