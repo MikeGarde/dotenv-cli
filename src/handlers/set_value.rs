@@ -11,13 +11,20 @@ use crate::qualifying_rules::Options;
 pub fn set_value(options: &Options) {
     let key = &options.target_keys[0];
     let set_val = options.set_value.as_deref().unwrap_or("");
-    let new_line = if set_val.contains('\n') {
-        format!("{}=\"{}\"", key, set_val)
-    } else {
-        format!("{}={}", key, set_val)
-    };
 
     let env_object = options.env_object.as_ref().unwrap();
+
+    // A key that was written as `export KEY=value` keeps its prefix on rewrite,
+    // so a file meant to be `source`d stays sourceable.
+    let prefix = match env_object.get(key) {
+        Some(env_val) if env_val.exported => "export ",
+        _ => "",
+    };
+    let new_line = if set_val.contains('\n') {
+        format!("{}{}=\"{}\"", prefix, key, set_val)
+    } else {
+        format!("{}{}={}", prefix, key, set_val)
+    };
 
     if let Some(env_val) = env_object.get(key) {
         // Read file fresh (in case concurrent changes occurred)

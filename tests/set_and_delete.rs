@@ -500,3 +500,86 @@ fn add_key_to_file_without_trailing_newline() {
     let content = fs::read_to_string(tmp.path()).unwrap();
     assert_eq!(content, "FOO=bar\nBAZ=qux\n");
 }
+
+#[test]
+fn set_on_a_list_with_a_bracket_in_its_comment_does_not_truncate_the_file() {
+    use std::io::Write;
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write_all(b"LIST=[\"a\"] # see note [1]\nAFTER=iamhere\nTHIRD=alsohere\n")
+        .unwrap();
+    tmp.flush().unwrap();
+
+    bin()
+        .arg("LIST")
+        .arg("--set")
+        .arg("[\"z\"]")
+        .arg("--file")
+        .arg(tmp.path())
+        .assert()
+        .success();
+
+    let content = fs::read_to_string(tmp.path()).unwrap();
+    assert_eq!(content, "LIST=[\"z\"]\nAFTER=iamhere\nTHIRD=alsohere\n");
+}
+
+// `export KEY=value` lines are addressable by their real key name, and a
+// rewrite keeps the prefix so a file meant to be `source`d stays sourceable.
+
+#[test]
+fn set_preserves_the_export_prefix() {
+    use std::io::Write;
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write_all(b"export FOO=bar\nPLAIN=keep\n").unwrap();
+    tmp.flush().unwrap();
+
+    bin()
+        .arg("FOO")
+        .arg("--set")
+        .arg("baz")
+        .arg("--file")
+        .arg(tmp.path())
+        .assert()
+        .success();
+
+    let content = fs::read_to_string(tmp.path()).unwrap();
+    assert_eq!(content, "export FOO=baz\nPLAIN=keep\n");
+}
+
+#[test]
+fn delete_removes_an_exported_key() {
+    use std::io::Write;
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write_all(b"export FOO=bar\nPLAIN=keep\n").unwrap();
+    tmp.flush().unwrap();
+
+    bin()
+        .arg("FOO")
+        .arg("--delete")
+        .arg("--file")
+        .arg(tmp.path())
+        .assert()
+        .success();
+
+    let content = fs::read_to_string(tmp.path()).unwrap();
+    assert_eq!(content, "PLAIN=keep\n");
+}
+
+#[test]
+fn set_on_a_non_exported_key_does_not_add_a_prefix() {
+    use std::io::Write;
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write_all(b"export FOO=bar\nPLAIN=old\n").unwrap();
+    tmp.flush().unwrap();
+
+    bin()
+        .arg("PLAIN")
+        .arg("--set")
+        .arg("new")
+        .arg("--file")
+        .arg(tmp.path())
+        .assert()
+        .success();
+
+    let content = fs::read_to_string(tmp.path()).unwrap();
+    assert_eq!(content, "export FOO=bar\nPLAIN=new\n");
+}

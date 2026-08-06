@@ -9,6 +9,7 @@ pub struct EnvValue {
     pub line_start: i64,
     pub line_end: i64,
     pub no_expand: bool,
+    pub exported: bool,
 }
 
 impl EnvValue {
@@ -19,6 +20,7 @@ impl EnvValue {
             line_start: -1,
             line_end: -1,
             no_expand: false,
+            exported: false,
         }
     }
 
@@ -28,6 +30,7 @@ impl EnvValue {
             line_start,
             line_end,
             no_expand: false,
+            exported: false,
         }
     }
 }
