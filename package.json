@@ -1,6 +1,6 @@
 {
   "name": "@mikegarde/dotenv-cli",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Read and update dotenv files from the cli",
   "bin": {
     "dotenv": "bin/dotenv"
